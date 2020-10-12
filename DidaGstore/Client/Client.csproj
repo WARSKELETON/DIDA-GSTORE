@@ -12,7 +12,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-	<Protobuf Include="Protos\Gstore.proto" GrpcServices="Client" />
+    <Protobuf Include="protos\Gstore.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>
