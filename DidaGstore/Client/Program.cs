@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Client
+namespace GstoreClient
 {
     class Program
     {
