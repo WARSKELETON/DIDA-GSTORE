@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30523.141
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{FCCE1B35-5BD4-4068-930D-22D6998E9679}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GstoreClient", "Client\GstoreClient.csproj", "{FCCE1B35-5BD4-4068-930D-22D6998E9679}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{DF80A1CC-2FA1-49F5-9E35-88CB276B2DAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GstoreServer", "Server\GstoreServer.csproj", "{DF80A1CC-2FA1-49F5-9E35-88CB276B2DAB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
