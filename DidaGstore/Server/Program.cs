@@ -6,7 +6,11 @@ namespace GstoreServer
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            GstoreRepository repo = new GstoreRepository();
+            repo.Write("1", "1", "teste");
+            Console.WriteLine(repo.Read("1", "1"));
+            repo.Write("1", "1", "teste2");
+            Console.WriteLine(repo.Read("1", "1"));
         }
     }
 }

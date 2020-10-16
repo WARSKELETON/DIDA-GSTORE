@@ -1,0 +1,25 @@
+﻿syntax = "proto3";
+
+service GstoreReplicaService {
+	rpc Lock (LockRequest) returns (LockReply);
+	rpc Update (UpdateRequest) returns (UpdateReply);
+}
+
+message LockRequest {
+	string partition_id = 1;
+	string object_id = 2;
+}
+
+message LockReply {
+	bool ack = 1;
+}
+
+message UpdateRequest {
+	string partition_id = 1;
+	string object_id = 2;
+	string value = 3;
+}
+
+message UpdateReply {
+	bool ack = 1;
+}

@@ -6,11 +6,11 @@ using Grpc.Core;
 
 namespace GstoreServer
 {
-    class GstoreServerService : GstoreService.GstoreServiceBase
+    class GstoreServiceImpl : GstoreService.GstoreServiceBase
     {
         private GstoreServer GstoreServer;
 
-        public GstoreServerService(GstoreServer server)
+        public GstoreServiceImpl(GstoreServer server)
         {
             GstoreServer = server;
         }
@@ -18,6 +18,13 @@ namespace GstoreServer
         public override Task<ReadReply> Read(ReadRequest request, ServerCallContext context)
         {
             ReadReply reply = GstoreServer.Read(request.PartitionId, request.ObjectId);
+
+            return Task.FromResult(reply);
+        }
+
+        public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
+        {
+            WriteReply reply = GstoreServer.Write(request.PartitionId, request.ObjectId, request.Value);
 
             return Task.FromResult(reply);
         }
