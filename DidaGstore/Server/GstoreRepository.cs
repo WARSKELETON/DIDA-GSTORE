@@ -13,9 +13,9 @@ namespace GstoreServer
             Gstore = new Dictionary<(string, string), string>();
         }
 
-        public string Read(string serverId, string partitionId, string objectId)
+        public string Read(string partitionId, string objectId)
         {
-            throw new NotImplementedException();
+            return Gstore[(partitionId, objectId)];
         }
 
         public bool Write(string partitionId, string objectId, string value)

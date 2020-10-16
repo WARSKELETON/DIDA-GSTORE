@@ -1,16 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
+using Grpc.Core;
 
 namespace GstoreServer
 {
     class GstoreServerService : GstoreService.GstoreServiceBase
     {
-        private IGstoreRepository GstoreRepository;
+        private GstoreServer GstoreServer;
 
-        public GstoreServerService()
+        public GstoreServerService(GstoreServer server)
         {
-            GstoreRepository = new GstoreRepository();
+            GstoreServer = server;
+        }
+
+        public override Task<ReadReply> Read(ReadRequest request, ServerCallContext context)
+        {
+            ReadReply reply = GstoreServer.Read(request.PartitionId, request.ObjectId);
+
+            return Task.FromResult(reply);
         }
     }
 }
