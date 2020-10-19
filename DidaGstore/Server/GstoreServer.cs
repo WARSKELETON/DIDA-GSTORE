@@ -96,6 +96,9 @@ namespace GstoreServer
         {
             GstoreRepository.Write(partitionId, objectId, value);
 
+            mre.Set();
+            mre.Reset();
+
             return new UpdateReply
             {
                 Ack = true
