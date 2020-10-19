@@ -108,8 +108,7 @@ namespace GstoreServer
         public void Run()
         {
             int port = 1001;
-            AppContext.SetSwitch(
-                "System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             GrpcChannel channel = GrpcChannel.ForAddress($"http://localhost:{port}");
             GstoreReplicaService.GstoreReplicaServiceClient client = new GstoreReplicaService.GstoreReplicaServiceClient(channel);
 

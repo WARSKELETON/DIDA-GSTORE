@@ -4,22 +4,22 @@ service GstoreService {
 	rpc Write (WriteRequest) returns (WriteReply);
 	rpc Read (ReadRequest) returns (ReadReply);
 	rpc ListServer (ListServerRequest) returns (ListServerReply);
-	rpc ListGlobal (ListGlobalRequest) returns (ListGlobalReply);
 }
 
 message ListServerRequest {
-	string server_id = 1;
+	
 }
 
 message ListServerReply {
-	bool master = 1;
-	repeated string value = 2;
+	repeated Object objects = 1;
 }
 
-message ListGlobalRequest {
-}
-
-message ListGlobalReply {
+message Object {
+    bool master = 1;
+    string server_id = 2;
+    string partition_id = 3;
+    string object_id = 4;
+    string value = 5;
 }
 
 message WriteRequest {
@@ -33,9 +33,8 @@ message WriteReply {
 }
 
 message ReadRequest {
-	string server_id = 1;
-	string partition_id = 2;
-	string object_id = 3;
+	string partition_id = 1;
+	string object_id = 2;
 }
 
 message ReadReply {

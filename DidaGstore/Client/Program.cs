@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace GstoreClient
 {
@@ -6,7 +7,18 @@ namespace GstoreClient
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            GstoreClient client = new GstoreClient(null);
+
+            Parser parser = new Parser(client);
+            if(args.Length == 1 && File.Exists(args[0])) {
+                StreamReader file = new StreamReader(args[0]);
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    parser.parse(line);
+                }
+                file.Close();
+            }
         }
     }
 }
