@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GstoreClient", "Client\Gsto
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GstoreServer", "Server\GstoreServer.csproj", "{DF80A1CC-2FA1-49F5-9E35-88CB276B2DAB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMaster", "PuppetMaster\PuppetMaster.csproj", "{5C9FC994-DD0F-43A8-95FD-69E3CD25E63B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{DF80A1CC-2FA1-49F5-9E35-88CB276B2DAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF80A1CC-2FA1-49F5-9E35-88CB276B2DAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF80A1CC-2FA1-49F5-9E35-88CB276B2DAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C9FC994-DD0F-43A8-95FD-69E3CD25E63B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C9FC994-DD0F-43A8-95FD-69E3CD25E63B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C9FC994-DD0F-43A8-95FD-69E3CD25E63B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C9FC994-DD0F-43A8-95FD-69E3CD25E63B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

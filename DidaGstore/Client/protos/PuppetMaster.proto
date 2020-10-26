@@ -1,0 +1,13 @@
+﻿syntax = "proto3";
+option csharp_namespace= "GstoreClient";
+
+service PuppetMasterService {
+	rpc PrintStatus (StatusRequest) returns (StatusReply);
+}
+
+message StatusRequest {
+}
+
+message StatusReply {
+	bool ok = 1;
+}

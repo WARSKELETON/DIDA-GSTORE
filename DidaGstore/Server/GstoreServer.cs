@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using Grpc.Core;
@@ -17,6 +18,7 @@ namespace GstoreServer
         private IGstoreRepository GstoreRepository;
         private ArrayList ReadRequests;
         private ArrayList ReplicasIds;
+        private bool freezed;
 
         static ManualResetEvent mre = new ManualResetEvent(false);
 
@@ -104,6 +106,43 @@ namespace GstoreServer
                 Ack = true
             };
         }
+
+        public StatusReply PrintStatus() {
+            // TODO
+            //Console.WriteLine();
+
+            return new StatusReply {
+                Ok = true
+            };
+        }
+
+        public CrashReply Crash() {
+            // Mandar para as outras o aviso?
+            Process.GetCurrentProcess().Kill();
+
+            return new CrashReply {
+                Ok = true
+            };
+        }
+
+        public FreezeReply Freeze() {
+            // TODO: adicionar flag freezed aos metodos
+            freezed = true;
+
+            return new FreezeReply {
+                Ok = true
+            };
+        }
+
+        public UnfreezeReply Unfreeze() {
+            // TODO: adicionar flag freezed aos metodos
+            freezed = false;
+
+            return new UnfreezeReply {
+                Ok = true
+            };
+        }
+
 
         public void Run()
         {

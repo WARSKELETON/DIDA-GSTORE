@@ -11,6 +11,9 @@ namespace GstoreServer
             Console.WriteLine(repo.Read("1", "1"));
             repo.Write("1", "1", "teste2");
             Console.WriteLine(repo.Read("1", "1"));
+            while (true) {
+
+            }
         }
     }
 }

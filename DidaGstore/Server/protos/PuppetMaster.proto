@@ -1,0 +1,41 @@
+﻿syntax = "proto3";
+option csharp_namespace= "GstoreServer";
+
+service PuppetMasterService {
+	rpc Crash (CrashRequest) returns (CrashReply);
+	rpc Freeze (FreezeRequest) returns (FreezeReply);
+	rpc Unfreeze (UnfreezeRequest) returns (UnfreezeReply);
+	rpc PrintStatus (StatusRequest) returns (StatusReply);
+}
+
+message StatusRequest {
+
+}
+
+message StatusReply {
+	bool ok = 1;
+}
+
+message CrashRequest {
+
+}
+
+message CrashReply {
+	bool ok = 1;
+}
+
+message FreezeRequest {
+
+}
+
+message FreezeReply {
+	bool ok = 1;
+}
+
+message UnfreezeRequest {
+
+}
+
+message UnfreezeReply {
+	bool ok = 1;
+}

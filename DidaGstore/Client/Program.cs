@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace GstoreClient
 {
@@ -10,14 +11,20 @@ namespace GstoreClient
             GstoreClient client = new GstoreClient(null);
 
             Parser parser = new Parser(client);
-            if(args.Length == 1 && File.Exists(args[0])) {
-                StreamReader file = new StreamReader(args[0]);
+            string path = Regex.Replace(Path.GetFullPath(args[2]), "PuppetMaster", "Client");
+
+            if (args.Length == 3 && File.Exists(path)) {
+                StreamReader file = new StreamReader(path);
                 string line;
                 while ((line = file.ReadLine()) != null)
                 {
                     parser.parse(line);
                 }
                 file.Close();
+            }
+            
+            while(true) {
+
             }
         }
     }
