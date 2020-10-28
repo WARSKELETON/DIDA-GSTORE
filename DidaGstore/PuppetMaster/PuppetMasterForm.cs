@@ -24,6 +24,10 @@ namespace PuppetMaster {
                 try {
                     string path = openScriptDialog.FileName;
                     StreamReader file = new StreamReader(path);
+                    StreamReader fileConfig = new StreamReader(path);
+                    string fileString = fileConfig.ReadToEnd();
+                    parser.generateConfig(fileString);
+                    fileConfig.Close();
                     string line;
                     while ((line = file.ReadLine()) != null) {
                         parser.parse(line);

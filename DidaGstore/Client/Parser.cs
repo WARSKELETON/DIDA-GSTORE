@@ -34,12 +34,14 @@ namespace GstoreClient
                         Console.WriteLine("Invalid number of arguments: Read partitionId objectId serverId");
                         return;
                     }
-                    //Client.Read(args[1], args[2], args[3]);
+                    string value = Client.Read(args[1], args[2], args[3]);
                     Console.WriteLine($"Client Read {args[1]} {args[2]} {args[3]}");
+                    Console.WriteLine(value);
                     break;
                 case "write":
-                    //Client.Write(args[1], args[2], args[3]);
+                    bool ok = Client.Write(args[1], args[2], args[3]);
                     Console.WriteLine($"Client Write {args[1]} {args[2]} {args[3]}");
+                    Console.WriteLine(ok);
                     break;
                 case "listServer":
                     //Client.ListServer(args[1]);

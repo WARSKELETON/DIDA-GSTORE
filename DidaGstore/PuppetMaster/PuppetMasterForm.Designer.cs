@@ -33,9 +33,10 @@
             // 
             // btnOpenScript
             // 
-            this.btnOpenScript.Location = new System.Drawing.Point(35, 35);
+            this.btnOpenScript.Location = new System.Drawing.Point(31, 26);
+            this.btnOpenScript.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnOpenScript.Name = "btnOpenScript";
-            this.btnOpenScript.Size = new System.Drawing.Size(129, 38);
+            this.btnOpenScript.Size = new System.Drawing.Size(113, 28);
             this.btnOpenScript.TabIndex = 0;
             this.btnOpenScript.Text = "Open Script";
             this.btnOpenScript.UseVisualStyleBackColor = true;
@@ -43,10 +44,11 @@
             // 
             // PuppetMasterForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(700, 338);
             this.Controls.Add(this.btnOpenScript);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "PuppetMasterForm";
             this.Text = "Puppet Master";
             this.ResumeLayout(false);

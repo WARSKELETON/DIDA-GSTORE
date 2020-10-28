@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PuppetMaster
 {
@@ -40,6 +42,22 @@ namespace PuppetMaster
                 case "Wait":
                     break;
             }
+        }
+
+        public void generateConfig(string fileString)
+        {
+            Regex r = new Regex(@"Server\s(?<server_id>\d+)\s(?<server_url>\w+:\/\/[^\/]+?:\d+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
+            MatchCollection matches = r.Matches(fileString);
+
+            FileStream stream = new FileStream("system-config.txt", FileMode.OpenOrCreate);
+            using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+            {
+                foreach (Match match in matches)
+                {
+                    writer.WriteLine(match.Groups["server_id"].Value + " " + match.Groups["server_url"].Value);
+                }
+            }
+            stream.Close();
         }
     }
 }

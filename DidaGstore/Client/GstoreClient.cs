@@ -21,14 +21,19 @@ namespace GstoreClient
 
         public GstoreClient(Dictionary<string, string> serversList)
         {
-            /*
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             foreach (KeyValuePair<string, string> item in serversList)
             {
                 GrpcChannel channel = GrpcChannel.ForAddress(item.Value);
                 servers.Add(item.Key, new GstoreService.GstoreServiceClient(channel));
             }
-            */
+            // Retirar esta
+            List<Tuple<string, bool>> partitionServers = new List<Tuple<string, bool>>();
+            List<Tuple<string, bool>> partition2Servers = new List<Tuple<string, bool>>();
+            partitionServers.Add(new Tuple<string, bool>("1", true));
+            partition2Servers.Add(new Tuple<string, bool>("2", true));
+            partitionsSet.Add("1", partitionServers);
+            partitionsSet.Add("2", partition2Servers);
         }
 
         public string Read(string partitionId, string objectId, string serverId)

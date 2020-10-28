@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -60,12 +61,19 @@ namespace GstoreServer
         {
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
 
-            lock (key)
+            if (key != null)
             {
-                foreach (string serverId in ReplicasIds)
+                lock (key)
                 {
+                    foreach (string serverId in ReplicasIds)
+                    {
 
+                    }
                 }
+            }
+            else
+            {
+                GstoreRepository.Write(partitionId, objectId, value);
             }
 
             return new WriteReply
@@ -146,7 +154,9 @@ namespace GstoreServer
 
         public void Run()
         {
-            int port = 1001;
+            Regex r = new Regex(@"^(?<proto>\w+):\/\/[^\/]+?:(?<port>\d+)?", RegexOptions.None, TimeSpan.FromMilliseconds(150));
+            Match m = r.Match(Url);
+            int port = Int32.Parse(m.Groups["port"].Value);
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             GrpcChannel channel = GrpcChannel.ForAddress($"http://localhost:{port}");
             GstoreReplicaService.GstoreReplicaServiceClient client = new GstoreReplicaService.GstoreReplicaServiceClient(channel);
@@ -157,6 +167,7 @@ namespace GstoreServer
                 Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
             };
             server.Start();
+            while (true) ;
         }
 
     }
