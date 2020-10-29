@@ -46,18 +46,36 @@ namespace PuppetMaster
 
         public void generateConfig(string fileString)
         {
-            Regex r = new Regex(@"Server\s(?<server_id>\d+)\s(?<server_url>\w+:\/\/[^\/]+?:\d+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
-            MatchCollection matches = r.Matches(fileString);
+            Regex serverRegex = new Regex(@"Server\s(?<server_id>[^\s]+)\s(?<server_url>\w+:\/\/[^\/]+?:\d+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
+            Regex partitionRegex = new Regex(@"Partition\s(?<r_factor>\d)\s(?<partition_name>[^\s]+)(?<servers_ids>(\s[^\s]+)+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
+            MatchCollection serverMatches = serverRegex.Matches(fileString);
+            MatchCollection partitionMatches = partitionRegex.Matches(fileString);
 
-            FileStream stream = new FileStream("system-config.txt", FileMode.OpenOrCreate);
-            using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+            string clientConfigPath = Regex.Replace(AppDomain.CurrentDomain.BaseDirectory, "PuppetMaster", "Client") + "\\system-config.txt";
+            string serverConfigPath = Regex.Replace(AppDomain.CurrentDomain.BaseDirectory, "PuppetMaster", "Server") + "\\system-config.txt";
+            FileStream clientConfigStream = new FileStream(clientConfigPath, FileMode.Create);
+            FileStream serverConfigStream = new FileStream(serverConfigPath, FileMode.Create);
+            using StreamWriter clientConfigWriter = new StreamWriter(clientConfigStream, Encoding.UTF8),
+                serverConfigWriter = new StreamWriter(serverConfigStream, Encoding.UTF8);
+
+            foreach (Match match in serverMatches)
             {
-                foreach (Match match in matches)
-                {
-                    writer.WriteLine(match.Groups["server_id"].Value + " " + match.Groups["server_url"].Value);
-                }
+                string serverLine = $"{match.Groups["server_id"].Value} {match.Groups["server_url"].Value}";
+                clientConfigWriter.WriteLine(serverLine);
+                serverConfigWriter.WriteLine(serverLine);
             }
-            stream.Close();
+
+            foreach (Match match in partitionMatches)
+            {
+                string partitionLine = match.Value;
+                string[] serversIds = match.Groups["servers_ids"].Value.Trim().Split(" ");
+                int randomServerIndex = new Random().Next(serversIds.Length);
+                string masterLine = $"Master {match.Groups["partition_name"]} {serversIds[randomServerIndex]}";
+                clientConfigWriter.WriteLine(partitionLine);
+                serverConfigWriter.WriteLine(partitionLine);
+                clientConfigWriter.WriteLine(masterLine);
+                serverConfigWriter.WriteLine(masterLine);
+            }
         }
     }
 }
