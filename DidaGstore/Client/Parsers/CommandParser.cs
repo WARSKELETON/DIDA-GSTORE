@@ -4,14 +4,14 @@ using System.Text;
 
 namespace GstoreClient
 {
-    class Parser
+    class CommandParser
     {
         private GstoreClient Client = null;
         private int Iterations = 0;
         private bool Repeat = false;
         List<string> Cmds = null;
 
-        public Parser(GstoreClient client)
+        public CommandParser(GstoreClient client)
         {
             Client = client;
             Cmds = new List<string>();

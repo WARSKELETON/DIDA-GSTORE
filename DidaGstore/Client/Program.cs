@@ -1,4 +1,6 @@
-﻿using System;
+﻿using GstoreClient.Models;
+using GstoreClient.Parsers;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -9,12 +11,12 @@ namespace GstoreClient
     {
         static void Main(string[] args)
         {
-            Dictionary<string, string> servers = new Dictionary<string, string>();
-            servers.Add("1", "http://localhost:1001");
-            servers.Add("2", "http://localhost:1002");
-            GstoreClient client = new GstoreClient(servers);
+            // Read the configuration file generated on the server
+            ConfigParser config_parser = new ConfigParser();
 
-            Parser parser = new Parser(client);
+            GstoreClient client = new GstoreClient(config_parser.Servers, config_parser.Partitions);
+
+            CommandParser parser = new CommandParser(client);
             string path = Regex.Replace(Path.GetFullPath(args[2]), "PuppetMaster", "Client");
 
             if (args.Length == 3 && File.Exists(path)) {

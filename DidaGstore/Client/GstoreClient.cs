@@ -1,25 +1,23 @@
 ﻿using Grpc.Net.Client;
+using GstoreClient.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace GstoreClient
 {
     class GstoreClient
     {
+        // ServerId, ServerConnection<GstoreService>
         private Dictionary<string, GstoreService.GstoreServiceClient> servers = new Dictionary<string, GstoreService.GstoreServiceClient>();
-        // PartitionId
-            // S1 (master)
-            // S2
-            // S3 
-        private Dictionary<string, List<Tuple<string, bool>>> partitionsSet = new Dictionary<string, List<Tuple<string, bool>>>();
+        // PartitionId, Partition
+        private Dictionary<string, Partition> partitions = new Dictionary<string, Partition>();
 
-        private Tuple<string, string> attachedServer;
+        private string attachedServer;
 
-        public GstoreClient(Dictionary<string, string> serversList)
+        public GstoreClient(Dictionary<string, string> serversList, List<Partition> partitionsList)
         {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             foreach (KeyValuePair<string, string> item in serversList)
@@ -27,13 +25,18 @@ namespace GstoreClient
                 GrpcChannel channel = GrpcChannel.ForAddress(item.Value);
                 servers.Add(item.Key, new GstoreService.GstoreServiceClient(channel));
             }
-            // Retirar esta
-            List<Tuple<string, bool>> partitionServers = new List<Tuple<string, bool>>();
-            List<Tuple<string, bool>> partition2Servers = new List<Tuple<string, bool>>();
-            partitionServers.Add(new Tuple<string, bool>("1", true));
-            partition2Servers.Add(new Tuple<string, bool>("2", true));
-            partitionsSet.Add("1", partitionServers);
-            partitionsSet.Add("2", partition2Servers);
+            foreach (Partition partition in partitionsList)
+            {
+                partitions.Add(partition.Id, partition);
+            }
+            foreach (var server in servers)
+            {
+                Console.WriteLine("Existe server: " + server.Key);
+            }
+            foreach (var partition in partitions)
+            {
+                Console.WriteLine("Existe partition: " + partition.Key);
+            }
         }
 
         public string Read(string partitionId, string objectId, string serverId)
@@ -42,6 +45,7 @@ namespace GstoreClient
             {
                 Attach(partitionId);
             }*/
+            Console.WriteLine(serverId);
 
             ReadReply reply = servers[serverId].Read(new ReadRequest() {  // Change server id to attached server id
                 PartitionId = partitionId,
@@ -97,37 +101,40 @@ namespace GstoreClient
 
         private void Attach(string partitionId)
         {
-            List<Tuple<string, bool>> availableServers = getAvailableServers(partitionId);
+            List<string> availableServers = getAvailableServers(partitionId);
             int index = (new Random()).Next(0, availableServers.Count);
-            attachedServer = new Tuple<string, string>(partitionId, availableServers[index].Item1);
+
+            attachedServer = availableServers[index];
         }
         private string getMasterId(string partitionId)
         {
-            foreach (Tuple<string, bool> server in getAvailableServers(partitionId))
+            Partition partition = null;
+            if (!partitions.TryGetValue(partitionId, out partition))
             {
-                if (server.Item2)
-                {
-                    return server.Item1;
-                }
+                throw new Exception("Partition doesn't exist.");
             }
-            throw new Exception("Não há master.");
+            if (partition.Master != null)
+            {
+                return partition.Master;
+            }
+            throw new Exception("There is no master for the given partition.");
         }
 
-        private List<Tuple<string, bool>> getAvailableServers(string partitionId)
+        private List<string> getAvailableServers(string partitionId)
         {
-            List<Tuple<string, bool>> availableServers = null;
-            if (!partitionsSet.TryGetValue(partitionId, out availableServers))
+            Partition partition = null;
+            if (!partitions.TryGetValue(partitionId, out partition))
             {
                 return null;
             }
-            return availableServers;
+            return partition.Servers;
         }
 
         private bool ServerExists(string partitionId, string serverId)
         {
-            foreach (Tuple<string, bool> server in getAvailableServers(partitionId))
+            foreach (string server in getAvailableServers(partitionId))
             {
-                if (server.Item1 == serverId)
+                if (server == serverId)
                 {
                     return true;
                 }

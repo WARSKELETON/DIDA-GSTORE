@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -7,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Grpc.Core;
 using Grpc.Net.Client;
+using GstoreServer.Models;
 
 namespace GstoreServer
 {
@@ -18,12 +20,12 @@ namespace GstoreServer
         private int MaxDelay;
         private IGstoreRepository GstoreRepository;
         private ArrayList ReadRequests;
-        private ArrayList ReplicasIds;
+        private Partition myPartition;
         private bool freezed;
 
         static ManualResetEvent mre = new ManualResetEvent(false);
 
-        public GstoreServer(string serverId, string url, int minDelay, int maxDelay)
+        public GstoreServer(string serverId, string url, int minDelay, int maxDelay, Partition partition)
         {
             Id = serverId;
             Url = url;
@@ -31,6 +33,7 @@ namespace GstoreServer
             MaxDelay = maxDelay;
             GstoreRepository = new GstoreRepository();
             ReadRequests = new ArrayList();
+            myPartition = partition; // CONTAINS THE MASTER (MYSELF) AND THE SERVERS LIST
         }
 
         public ReadReply Read(string partitionId, string objectId)
@@ -65,7 +68,7 @@ namespace GstoreServer
             {
                 lock (key)
                 {
-                    foreach (string serverId in ReplicasIds)
+                    foreach (string serverId in myPartition.Servers)
                     {
 
                     }
