@@ -20,12 +20,14 @@ namespace GstoreServer
         private int MaxDelay;
         private IGstoreRepository GstoreRepository;
         private ArrayList ReadRequests;
-        private Partition myPartition;
+        private Partition MyPartition;
+        private Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient> Replicas;
+        private Dictionary<string, string> AllServerIdsServerUrls;
         private bool freezed;
 
         static ManualResetEvent mre = new ManualResetEvent(false);
 
-        public GstoreServer(string serverId, string url, int minDelay, int maxDelay, Partition partition)
+        public GstoreServer(string serverId, string url, int minDelay, int maxDelay, Partition partition, Dictionary<string, string> allServerIdsServerUrls)
         {
             Id = serverId;
             Url = url;
@@ -33,7 +35,9 @@ namespace GstoreServer
             MaxDelay = maxDelay;
             GstoreRepository = new GstoreRepository();
             ReadRequests = new ArrayList();
-            myPartition = partition; // CONTAINS THE MASTER (MYSELF) AND THE SERVERS LIST
+            MyPartition = partition; // CONTAINS THE MASTER (MYSELF) AND THE SERVERS LIST
+            Replicas = new Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient>();
+            AllServerIdsServerUrls = allServerIdsServerUrls;
         }
 
         public ReadReply Read(string partitionId, string objectId)
@@ -64,18 +68,35 @@ namespace GstoreServer
         {
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
 
-            if (key != null)
+            if (key == null)
             {
-                lock (key)
-                {
-                    foreach (string serverId in myPartition.Servers)
-                    {
-
-                    }
-                }
+                GstoreRepository.Write(partitionId, objectId, null);
+                key = GstoreRepository.GetKey(partitionId, objectId);
             }
-            else
+
+            lock (key)
             {
+                foreach (string serverId in MyPartition.Servers)
+                {
+                    // Verificar se deu
+                    Replicas[serverId].Lock(new LockRequest
+                    {
+                        PartitionId = partitionId,
+                        ObjectId = objectId
+                    });
+                }
+
+                foreach (string serverId in MyPartition.Servers)
+                {
+                    // Verificar se deu
+                    Replicas[serverId].Update(new UpdateRequest
+                    {
+                        PartitionId = partitionId,
+                        ObjectId = objectId,
+                        Value = value
+                    });
+                }
+
                 GstoreRepository.Write(partitionId, objectId, value);
             }
 
@@ -88,6 +109,12 @@ namespace GstoreServer
         public LockReply Lock(string partitionId, string objectId)
         {
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
+
+            if (key == null)
+            {
+                GstoreRepository.Write(partitionId, objectId, null);
+                key = GstoreRepository.GetKey(partitionId, objectId);
+            }
 
             Thread thread = new Thread(() =>
             {
@@ -154,6 +181,16 @@ namespace GstoreServer
             };
         }
 
+        private void AddReplicaChannels()
+        {
+            foreach (string replicaId in MyPartition.Servers)
+            {
+                GrpcChannel channel = GrpcChannel.ForAddress(AllServerIdsServerUrls[replicaId]);
+                GstoreReplicaService.GstoreReplicaServiceClient replicaClient = new GstoreReplicaService.GstoreReplicaServiceClient(channel);
+                Replicas.Add(replicaId, replicaClient);
+            }
+        }
+
 
         public void Run()
         {
@@ -161,8 +198,11 @@ namespace GstoreServer
             Match m = r.Match(Url);
             int port = Int32.Parse(m.Groups["port"].Value);
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-            GrpcChannel channel = GrpcChannel.ForAddress($"http://localhost:{port}");
-            GstoreReplicaService.GstoreReplicaServiceClient client = new GstoreReplicaService.GstoreReplicaServiceClient(channel);
+
+            if (MyPartition != null)
+            {
+                AddReplicaChannels();
+            }
 
             Server server = new Server
             {

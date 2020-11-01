@@ -45,6 +45,7 @@ namespace GstoreClient
             {
                 Attach(partitionId);
             }*/
+            // TODO: Verificar q sv existe
             Console.WriteLine(serverId);
 
             ReadReply reply = servers[serverId].Read(new ReadRequest() {  // Change server id to attached server id
