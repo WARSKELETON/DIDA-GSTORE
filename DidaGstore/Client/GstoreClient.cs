@@ -52,13 +52,14 @@ namespace GstoreClient
                 PartitionId = partitionId,
                 ObjectId = objectId
             });
-            
+
+            /*
             if (reply.Value.Equals("N/A") && !serverId.Equals("-1"))
             {
                 // TODO: Attach para o serverID
                 return Read(partitionId, objectId, "-1");
                 // Perguntar se é o enduser a fazer o attach ou se é automatico
-            }
+            } */
             return reply.Value;
         }
 
