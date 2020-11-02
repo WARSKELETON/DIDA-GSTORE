@@ -1,4 +1,5 @@
-﻿using GstoreClient.Models;
+﻿using Grpc.Core;
+using GstoreClient.Models;
 using GstoreClient.Parsers;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,6 @@ namespace GstoreClient
         {
             // Read the configuration file generated on the server
             ConfigParser config_parser = new ConfigParser();
-
             GstoreClient client = new GstoreClient(config_parser.Servers, config_parser.Partitions);
 
             CommandParser parser = new CommandParser(client);
@@ -28,8 +28,19 @@ namespace GstoreClient
                 }
                 file.Close();
             }
-            
-            while(true) {
+
+            string Url = args[1];
+            Regex r = new Regex(@"^(?<proto>\w+):\/\/[^\/]+?:(?<port>\d+)?", RegexOptions.None, TimeSpan.FromMilliseconds(150));
+            Match m = r.Match(Url);
+            int port = Int32.Parse(m.Groups["port"].Value);
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            Server server = new Server
+            {
+                Services = { PuppetMasterService.BindService(new PuppetMasterServiceImpl(client))},
+                Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
+            };
+            server.Start();
+            while (true) {
 
             }
         }

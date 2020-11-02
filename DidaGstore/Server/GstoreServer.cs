@@ -42,6 +42,9 @@ namespace GstoreServer
 
         public ReadReply Read(string partitionId, string objectId)
         {
+            // Delay for read and write or every message
+            DelayIncomingMessage();
+
             string value;
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
 
@@ -66,6 +69,8 @@ namespace GstoreServer
 
         public WriteReply Write(string partitionId, string objectId, string value)
         {
+            DelayIncomingMessage();
+
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
 
             if (key == null)
@@ -108,6 +113,8 @@ namespace GstoreServer
 
         public LockReply Lock(string partitionId, string objectId)
         {
+            DelayIncomingMessage();
+
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
 
             if (key == null)
@@ -134,6 +141,8 @@ namespace GstoreServer
 
         public UpdateReply Update(string partitionId, string objectId, string value)
         {
+            DelayIncomingMessage();
+
             GstoreRepository.Write(partitionId, objectId, value);
 
             mre.Set();
@@ -146,6 +155,9 @@ namespace GstoreServer
         }
 
         public StatusReply PrintStatus() {
+
+            DelayIncomingMessage();
+
             // TODO
             //Console.WriteLine();
 
@@ -155,15 +167,19 @@ namespace GstoreServer
         }
 
         public CrashReply Crash() {
-            // Mandar para as outras o aviso?
-            Process.GetCurrentProcess().Kill();
+            DelayIncomingMessage();
 
+            // Mandar para as outras o aviso de que a replica crashou?
+            Process.GetCurrentProcess().Kill();
+            
             return new CrashReply {
                 Ok = true
             };
         }
 
         public FreezeReply Freeze() {
+            DelayIncomingMessage();
+
             // TODO: adicionar flag freezed aos metodos
             freezed = true;
 
@@ -173,6 +189,8 @@ namespace GstoreServer
         }
 
         public UnfreezeReply Unfreeze() {
+            DelayIncomingMessage();
+
             // TODO: adicionar flag freezed aos metodos
             freezed = false;
 
@@ -191,6 +209,14 @@ namespace GstoreServer
             }
         }
 
+        private void DelayIncomingMessage()
+        {
+            if (MinDelay != 0 || MaxDelay != 0)
+            {
+                Random rand = new Random();
+                Thread.Sleep(rand.Next(MinDelay, MaxDelay + 1)); // + 1 because its exclusive
+            }
+        }
 
         public void Run()
         {
@@ -206,12 +232,12 @@ namespace GstoreServer
 
             Server server = new Server
             {
-                Services = { GstoreService.BindService(new GstoreServiceImpl(this)), GstoreReplicaService.BindService(new GstoreReplicaServiceImpl(this)) },
+                Services = { GstoreService.BindService(new GstoreServiceImpl(this)), GstoreReplicaService.BindService(new GstoreReplicaServiceImpl(this)),
+                             PuppetMasterService.BindService(new PuppetMasterServiceImpl(this))},
                 Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
             };
             server.Start();
             while (true) ;
         }
-
     }
 }

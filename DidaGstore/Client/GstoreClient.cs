@@ -1,4 +1,5 @@
-﻿using Grpc.Net.Client;
+﻿using Grpc.Core;
+using Grpc.Net.Client;
 using GstoreClient.Models;
 using System;
 using System.Collections;
@@ -15,7 +16,7 @@ namespace GstoreClient
         // PartitionId, Partition
         private Dictionary<string, Partition> partitions = new Dictionary<string, Partition>();
 
-        private string attachedServer;
+        private string attachedServer = "-1";
 
         public GstoreClient(Dictionary<string, string> serversList, List<Partition> partitionsList)
         {
@@ -41,31 +42,29 @@ namespace GstoreClient
 
         public string Read(string partitionId, string objectId, string serverId)
         {
-            /*if (attachedServer.Item1 != partitionId || (!ServerExists(partitionId, serverId) && serverId == "-1"))
+            if (!ServerExists(partitionId, attachedServer) && serverId == "-1")
             {
-                Attach(partitionId);
-            }*/
-            // TODO: Verificar q sv existe
-            Console.WriteLine(serverId);
+                AttachToRandomServer(partitionId);
+            }
 
-            ReadReply reply = servers[serverId].Read(new ReadRequest() {  // Change server id to attached server id
+            ReadReply reply = servers[attachedServer].Read(new ReadRequest() {
                 PartitionId = partitionId,
                 ObjectId = objectId
             });
 
-            /*
             if (reply.Value.Equals("N/A") && !serverId.Equals("-1"))
             {
-                // TODO: Attach para o serverID
+                AttachToServer(serverId);
                 return Read(partitionId, objectId, "-1");
-                // Perguntar se é o enduser a fazer o attach ou se é automatico
-            } */
+            }
+
             return reply.Value;
         }
 
         public bool Write(string partitionId, string objectId, string value)
         {
             string masterId = getMasterId(partitionId);
+            AttachToServer(masterId);
             WriteReply reply = servers[masterId].Write(new WriteRequest()
             {  
                 PartitionId = partitionId,
@@ -74,6 +73,19 @@ namespace GstoreClient
             });
 
             return reply.Ok;
+        }
+
+        public StatusReply PrintStatus()
+        {
+            /*
+            foreach(KeyValuePair<string, GstoreService.GstoreServiceClient> entry in servers)
+            {
+                entry.Value
+            }
+            Console.WriteLine();
+            */
+
+            return new StatusReply { Ok = true };
         }
 
         public List<Object> ListServer(string serverId)
@@ -101,13 +113,19 @@ namespace GstoreClient
             Thread.Sleep(milis);
         }
 
-        private void Attach(string partitionId)
+        private void AttachToRandomServer(string partitionId)
         {
             List<string> availableServers = getAvailableServers(partitionId);
             int index = (new Random()).Next(0, availableServers.Count);
 
             attachedServer = availableServers[index];
         }
+
+        private void AttachToServer(string serverId)
+        {
+            attachedServer = serverId;
+        }
+
         private string getMasterId(string partitionId)
         {
             Partition partition = null;
@@ -129,6 +147,7 @@ namespace GstoreClient
             {
                 return null;
             }
+            // Verificar quais servers estao em baixo
             return partition.Servers;
         }
 

@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="protos\PuppetMaster.proto" GrpcServices="Server" />
+    <Protobuf Include="protos\PuppetMaster.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>
