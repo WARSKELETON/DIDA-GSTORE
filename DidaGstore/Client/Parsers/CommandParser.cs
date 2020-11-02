@@ -52,7 +52,7 @@ namespace GstoreClient
                     Console.WriteLine("Client ListGlobal");
                     break;
                 case "wait":
-                    //Client.Wait(Int32.Parse(args[1]));
+                    Client.Wait(Int32.Parse(args[1]));
                     Console.WriteLine("Client Wait");
                     break;
                 case "begin-repeat":

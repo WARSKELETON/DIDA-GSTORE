@@ -92,31 +92,29 @@ namespace GstoreServer
             }
             lock (key)
             {
-                foreach (string serverId in MyPartitions[partitionId].Servers)
-                {
-                    if (serverId == Id) continue; 
-                    // Verificar se deu
-                    Replicas[serverId].Lock(new LockRequest
-                    {
-                        PartitionId = partitionId,
-                        ObjectId = objectId
-                    });
+                lock (MyPartitions[partitionId]) {
+
+                    foreach (string serverId in MyPartitions[partitionId].Servers) {
+                        if (serverId == Id) continue;
+                        // Verificar se deu
+                        Replicas[serverId].Lock(new LockRequest {
+                            PartitionId = partitionId,
+                            ObjectId = objectId
+                        });
+                    }
+
+                    Console.WriteLine("Locked Servers");
+
+                    foreach (string serverId in MyPartitions[partitionId].Servers) {
+                        // Verificar se deu
+                        if (serverId == Id) continue;
+                        Replicas[serverId].Update(new UpdateRequest {
+                            PartitionId = partitionId,
+                            ObjectId = objectId,
+                            Value = value
+                        });
+                    }
                 }
-
-                Console.WriteLine("Locked Servers");
-
-                foreach (string serverId in MyPartitions[partitionId].Servers)
-                {
-                    // Verificar se deu
-                    if (serverId == Id) continue;
-                    Replicas[serverId].Update(new UpdateRequest
-                    {
-                        PartitionId = partitionId,
-                        ObjectId = objectId,
-                        Value = value
-                    });
-                }
-
                 Console.WriteLine("Updated Servers");
 
                 GstoreRepository.Write(partitionId, objectId, value);
@@ -287,6 +285,7 @@ namespace GstoreServer
                 {
                     // TODO ADD LOCKS
                     Thread.Sleep(PING_TIMEOUT);
+
                     List<string> failedServers = new List<string>();
                     foreach (KeyValuePair<string, GstoreReplicaService.GstoreReplicaServiceClient> replica in Replicas)
                     {
@@ -299,16 +298,16 @@ namespace GstoreServer
                         {
                             Console.WriteLine("Detected Failure on server: " + replica.Key);
 
-                            foreach (KeyValuePair<string, Partition> partition in MyPartitions)
+                            foreach (Partition partition in MyPartitions.Values)
                             {
-                                if (partition.Value.Servers.Contains(replica.Key))
-                                {
-                                    if (replica.Key == partition.Value.Master)
-                                    {
-                                        partition.Value.Master = partition.Value.Servers[(partition.Value.Servers.IndexOf(partition.Value.Master) + 1) % partition.Value.Servers.Count];
+                                lock(MyPartitions[partition.Id]) {
+                                    if (partition.Servers.Contains(replica.Key)) {
+                                        if (replica.Key == partition.Master) {
+                                            partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
+                                        }
+                                        partition.Servers.Remove(replica.Key);
+                                        partition.FailedServer.Add(replica.Key);
                                     }
-                                    partition.Value.Servers.Remove(replica.Key);
-                                    partition.Value.FailedServer.Add(replica.Key);
                                 }
                             }
                             failedServers.Add(replica.Key);

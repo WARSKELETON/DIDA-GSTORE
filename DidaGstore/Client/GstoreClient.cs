@@ -42,15 +42,25 @@ namespace GstoreClient
 
         public string Read(string partitionId, string objectId, string serverId)
         {
-            if (!ServerExists(partitionId, attachedServer) && serverId == "-1")
-            {
-                AttachToRandomServer(partitionId);
-            }
+            ReadReply reply;
 
-            ReadReply reply = servers[attachedServer].Read(new ReadRequest() {
-                PartitionId = partitionId,
-                ObjectId = objectId
-            });
+            try {
+
+                if (!ServerExists(partitionId, attachedServer) && serverId == "-1")
+                {
+                    AttachToRandomServer(partitionId);
+                }
+
+                reply = servers[attachedServer].Read(new ReadRequest() {
+                    PartitionId = partitionId,
+                    ObjectId = objectId
+                });
+
+            } catch(Exception ex) {
+                RemoveServer();
+                AttachToRandomServer(partitionId);
+                return Read(partitionId, objectId, "-1");
+            }
 
             if (reply.Value.Equals("N/A") && !serverId.Equals("-1"))
             {
@@ -73,11 +83,16 @@ namespace GstoreClient
                     Value = value
                 });
 
+                if (!reply.Ok) {
+                    Console.WriteLine("outra vez");
+                    Write(partitionId, objectId, value);
+                }
                 return reply.Ok;
             } catch(Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                Console.ReadKey();
+                RemoveServer();
+                Console.WriteLine("Remove on write");
+                Write(partitionId, objectId, value);
                 return false;
             }
         }
@@ -117,6 +132,7 @@ namespace GstoreClient
 
         public void Wait(int milis)
         {
+            Console.WriteLine("Starting to sleep...");
             Thread.Sleep(milis);
         }
 
@@ -168,6 +184,21 @@ namespace GstoreClient
                 }
             }
             return false;
+        }
+
+        private void RemoveServer() {
+            servers.Remove(attachedServer);
+
+            foreach(Partition partition in partitions.Values) {
+                if (partition.Servers.Contains(attachedServer)) {
+                    if (attachedServer == partition.Master) {
+                        partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
+                        Console.WriteLine("New Master: " + partition.Master);
+                    }
+                    partition.Servers.Remove(attachedServer);
+                    partition.FailedServer.Add(attachedServer);
+                }
+            }
         }
     }
 }
