@@ -20,8 +20,8 @@ namespace GstoreServer {
         }
 
         public override Task<CrashReply> Crash(CrashRequest request, ServerCallContext context) {
+            Console.WriteLine("Server: Task crash");
             CrashReply reply = GstoreServer.Crash();
-
             return Task.FromResult(reply);
         }
 

@@ -14,20 +14,22 @@ namespace GstoreServer
 {
     class GstoreServer
     {
+        private int PING_TIMEOUT = 3000;
+
         private string Id;
         private string Url;
         private int MinDelay;
         private int MaxDelay;
         private IGstoreRepository GstoreRepository;
         private ArrayList ReadRequests;
-        private Partition MyPartition;
         private Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient> Replicas;
+        private Dictionary<string, Partition> MyPartitions;
         private Dictionary<string, string> AllServerIdsServerUrls;
         private bool freezed;
 
         static ManualResetEvent mre = new ManualResetEvent(false);
 
-        public GstoreServer(string serverId, string url, int minDelay, int maxDelay, Partition partition, Dictionary<string, string> allServerIdsServerUrls)
+        public GstoreServer(string serverId, string url, int minDelay, int maxDelay, List<Partition> partitions, Dictionary<string, string> allServerIdsServerUrls)
         {
             Id = serverId;
             Url = url;
@@ -35,13 +37,22 @@ namespace GstoreServer
             MaxDelay = maxDelay;
             GstoreRepository = new GstoreRepository();
             ReadRequests = new ArrayList();
-            MyPartition = partition; // CONTAINS THE MASTER (MYSELF) AND THE SERVERS LIST
             Replicas = new Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient>();
+            MyPartitions = new Dictionary<string, Partition>();
             AllServerIdsServerUrls = allServerIdsServerUrls;
+
+            foreach (Partition partition in partitions)
+            {
+                MyPartitions.Add(partition.Id, partition);
+            } // CONTAINS THE MASTER (MYSELF) AND THE SERVERS LIST
+
+            InitiatePingLoop();
         }
 
         public ReadReply Read(string partitionId, string objectId)
         {
+            Console.WriteLine("Going to read: " + partitionId + ", " + objectId);
+
             // Delay for read and write or every message
             DelayIncomingMessage();
 
@@ -60,7 +71,7 @@ namespace GstoreServer
             {
                 value = GstoreRepository.Read(partitionId, objectId);
             }
-
+            Console.WriteLine("Finish Reading.");
             return new ReadReply
             {
                 Value = value
@@ -69,20 +80,21 @@ namespace GstoreServer
 
         public WriteReply Write(string partitionId, string objectId, string value)
         {
+            Console.WriteLine("Going to WRITE: " + partitionId + ", " + objectId + ", " + value);
+
             DelayIncomingMessage();
 
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
-
             if (key == null)
             {
                 GstoreRepository.Write(partitionId, objectId, null);
                 key = GstoreRepository.GetKey(partitionId, objectId);
             }
-
             lock (key)
             {
-                foreach (string serverId in MyPartition.Servers)
+                foreach (string serverId in MyPartitions[partitionId].Servers)
                 {
+                    if (serverId == Id) continue; 
                     // Verificar se deu
                     Replicas[serverId].Lock(new LockRequest
                     {
@@ -91,9 +103,12 @@ namespace GstoreServer
                     });
                 }
 
-                foreach (string serverId in MyPartition.Servers)
+                Console.WriteLine("Locked Servers");
+
+                foreach (string serverId in MyPartitions[partitionId].Servers)
                 {
                     // Verificar se deu
+                    if (serverId == Id) continue;
                     Replicas[serverId].Update(new UpdateRequest
                     {
                         PartitionId = partitionId,
@@ -102,9 +117,11 @@ namespace GstoreServer
                     });
                 }
 
+                Console.WriteLine("Updated Servers");
+
                 GstoreRepository.Write(partitionId, objectId, value);
             }
-
+            Console.WriteLine("Finished Writing.");
             return new WriteReply
             {
                 Ok = true
@@ -154,6 +171,23 @@ namespace GstoreServer
             };
         }
 
+        public PingReply Ping()
+        {
+            return new PingReply
+            {
+                Ok = true
+            };
+        }
+
+        public PingReplicaReply PingReplica()
+        {
+            Console.WriteLine("Received Ping.");
+            return new PingReplicaReply
+            {
+                Ok = true
+            };
+        }
+
         public StatusReply PrintStatus() {
 
             DelayIncomingMessage();
@@ -167,11 +201,12 @@ namespace GstoreServer
         }
 
         public CrashReply Crash() {
+            Console.WriteLine("Going to Crash.");
             DelayIncomingMessage();
 
             // Mandar para as outras o aviso de que a replica crashou?
             Process.GetCurrentProcess().Kill();
-            
+            Console.WriteLine("Finished Crashing, failed.");
             return new CrashReply {
                 Ok = true
             };
@@ -201,11 +236,18 @@ namespace GstoreServer
 
         private void AddReplicaChannels()
         {
-            foreach (string replicaId in MyPartition.Servers)
+            foreach (KeyValuePair<string, Partition> item in MyPartitions)
             {
-                GrpcChannel channel = GrpcChannel.ForAddress(AllServerIdsServerUrls[replicaId]);
-                GstoreReplicaService.GstoreReplicaServiceClient replicaClient = new GstoreReplicaService.GstoreReplicaServiceClient(channel);
-                Replicas.Add(replicaId, replicaClient);
+                foreach (string replicaId in item.Value.Servers)
+                {
+                    if (replicaId == Id || Replicas.ContainsKey(replicaId))
+                    {
+                        continue;
+                    }
+                    GrpcChannel channel = GrpcChannel.ForAddress(AllServerIdsServerUrls[replicaId]);
+                    GstoreReplicaService.GstoreReplicaServiceClient replicaClient = new GstoreReplicaService.GstoreReplicaServiceClient(channel);
+                    Replicas.Add(replicaId, replicaClient);
+                }
             }
         }
 
@@ -225,10 +267,7 @@ namespace GstoreServer
             int port = Int32.Parse(m.Groups["port"].Value);
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-            if (MyPartition != null)
-            {
-                AddReplicaChannels();
-            }
+            AddReplicaChannels();
 
             Server server = new Server
             {
@@ -238,6 +277,50 @@ namespace GstoreServer
             };
             server.Start();
             while (true) ;
+        }
+
+        private void InitiatePingLoop()
+        {
+            Thread thread = new Thread(() =>
+            {
+                while (true)
+                {
+                    // TODO ADD LOCKS
+                    Thread.Sleep(PING_TIMEOUT);
+                    List<string> failedServers = new List<string>();
+                    foreach (KeyValuePair<string, GstoreReplicaService.GstoreReplicaServiceClient> replica in Replicas)
+                    {
+                        try
+                        {
+                            Console.WriteLine("Initiate Ping to: " + replica.Key);
+                            PingReplicaReply reply = replica.Value.PingReplica(new PingReplicaRequest());
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Detected Failure on server: " + replica.Key);
+
+                            foreach (KeyValuePair<string, Partition> partition in MyPartitions)
+                            {
+                                if (partition.Value.Servers.Contains(replica.Key))
+                                {
+                                    if (replica.Key == partition.Value.Master)
+                                    {
+                                        partition.Value.Master = partition.Value.Servers[(partition.Value.Servers.IndexOf(partition.Value.Master) + 1) % partition.Value.Servers.Count];
+                                    }
+                                    partition.Value.Servers.Remove(replica.Key);
+                                    partition.Value.FailedServer.Add(replica.Key);
+                                }
+                            }
+                            failedServers.Add(replica.Key);
+                        }
+                    }
+                    foreach (string server in failedServers)
+                    {
+                        Replicas.Remove(server);
+                    }
+                }
+            });
+            thread.Start();
         }
     }
 }

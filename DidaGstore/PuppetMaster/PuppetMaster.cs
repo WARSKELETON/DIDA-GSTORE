@@ -12,7 +12,7 @@ namespace PuppetMaster {
         private List<PuppetMasterService.PuppetMasterServiceClient> clients = new List<PuppetMasterService.PuppetMasterServiceClient>();
 
         public PuppetMaster() {
-
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         }
 
         public void CreateServer(string serverId, string url, string minDelay, string maxDelay) {
@@ -25,6 +25,17 @@ namespace PuppetMaster {
             AddClientConnection(clientUrl);
             string args = username + " " + clientUrl + " " + scriptFile;
             CreateProcess("Client", args);
+        }
+
+        public void Crash(string serverId)
+        {
+            try
+            {
+                servers[serverId].Crash(new CrashRequest());
+            } catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         private void AddServerConnection(string serverId, string url)

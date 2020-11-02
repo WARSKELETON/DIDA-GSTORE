@@ -23,4 +23,4 @@ namespace GstoreClient
             return Task.FromResult(reply);
         }
     }
-    }
+}

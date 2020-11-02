@@ -5,6 +5,8 @@ service GstoreService {
 	rpc Write (WriteRequest) returns (WriteReply);
 	rpc Read (ReadRequest) returns (ReadReply);
 	rpc ListServer (ListServerRequest) returns (ListServerReply);
+
+	rpc Ping (PingRequest) returns (PingReply);
 }
 
 message ListServerRequest {
@@ -40,4 +42,11 @@ message ReadRequest {
 
 message ReadReply {
 	string value = 1;
+}
+
+message PingRequest {
+}
+
+message PingReply {
+	bool ok = 1;
 }

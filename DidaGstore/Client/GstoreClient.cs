@@ -65,14 +65,21 @@ namespace GstoreClient
         {
             string masterId = getMasterId(partitionId);
             AttachToServer(masterId);
-            WriteReply reply = servers[masterId].Write(new WriteRequest()
-            {  
-                PartitionId = partitionId,
-                ObjectId = objectId,
-                Value = value
-            });
+            try { 
+                WriteReply reply = servers[masterId].Write(new WriteRequest()
+                {
+                    PartitionId = partitionId,
+                    ObjectId = objectId,
+                    Value = value
+                });
 
-            return reply.Ok;
+                return reply.Ok;
+            } catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.ReadKey();
+                return false;
+            }
         }
 
         public StatusReply PrintStatus()

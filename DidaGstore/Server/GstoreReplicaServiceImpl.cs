@@ -28,5 +28,12 @@ namespace GstoreServer
 
             return Task.FromResult(reply);
         }
+
+        public override Task<PingReplicaReply> PingReplica(PingReplicaRequest request, ServerCallContext context)
+        {
+            PingReplicaReply reply = GstoreServer.PingReplica();
+
+            return Task.FromResult(reply);
+        }
     }
 }

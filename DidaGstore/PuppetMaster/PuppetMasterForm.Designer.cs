@@ -25,6 +25,8 @@
         private void InitializeComponent() {
             this.openScriptDialog = new System.Windows.Forms.OpenFileDialog();
             this.btnOpenScript = new System.Windows.Forms.Button();
+            this.btnKill = new System.Windows.Forms.Button();
+            this.txtKill = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // openScriptDialog
@@ -42,16 +44,36 @@
             this.btnOpenScript.UseVisualStyleBackColor = true;
             this.btnOpenScript.Click += new System.EventHandler(this.btnOpenScript_Click);
             // 
+            // btnKill
+            // 
+            this.btnKill.Location = new System.Drawing.Point(31, 87);
+            this.btnKill.Name = "btnKill";
+            this.btnKill.Size = new System.Drawing.Size(335, 134);
+            this.btnKill.TabIndex = 1;
+            this.btnKill.Text = "Kill";
+            this.btnKill.UseVisualStyleBackColor = true;
+            this.btnKill.Click += new System.EventHandler(this.btnKill_Click);
+            // 
+            // txtKill
+            // 
+            this.txtKill.Location = new System.Drawing.Point(391, 87);
+            this.txtKill.Name = "txtKill";
+            this.txtKill.Size = new System.Drawing.Size(100, 23);
+            this.txtKill.TabIndex = 2;
+            // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(700, 338);
+            this.Controls.Add(this.txtKill);
+            this.Controls.Add(this.btnKill);
             this.Controls.Add(this.btnOpenScript);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "PuppetMasterForm";
             this.Text = "Puppet Master";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -60,6 +82,8 @@
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.Button btnOpenScript;
         private System.Windows.Forms.OpenFileDialog openScriptDialog;
+        private System.Windows.Forms.Button btnKill;
+        private System.Windows.Forms.TextBox txtKill;
     }
 }
 

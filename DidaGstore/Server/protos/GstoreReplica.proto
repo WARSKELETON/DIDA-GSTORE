@@ -3,6 +3,8 @@
 service GstoreReplicaService {
 	rpc Lock (LockRequest) returns (LockReply);
 	rpc Update (UpdateRequest) returns (UpdateReply);
+
+	rpc PingReplica (PingReplicaRequest) returns (PingReplicaReply);
 }
 
 message LockRequest {
@@ -22,4 +24,11 @@ message UpdateRequest {
 
 message UpdateReply {
 	bool ack = 1;
+}
+
+message PingReplicaRequest {
+}
+
+message PingReplicaReply {
+	bool ok = 1;
 }

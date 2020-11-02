@@ -10,12 +10,12 @@ namespace GstoreServer.Parsers
 {
     class ConfigParser
     {
-        public Partition Partition { get; }
+        public List<Partition> Partitions { get; }
         public Dictionary<string, string> Servers { get; }
 
         public ConfigParser(string server_id)
         {
-            Partition = null;
+            Partitions = new List<Partition>();
             Servers = new Dictionary<string, string>(); 
             try
             {
@@ -30,14 +30,15 @@ namespace GstoreServer.Parsers
                     {
                         case "Partition":
                             // SUGESTAO: MASTER SER O PRIMEIRO DA LISTA NA PARTITION FORNECIDA
-                            if (args[3] == server_id) // If im the master then this is the partition i need to save
+                            for (int i = 3; i < args.Length; i++) // Start after the master
                             {
-                                for (int i = 4; i < args.Length; i++) // Start after the master
-                                {
-                                    partitionServers.Add(args[i]);
-                                }
-                                Partition = new Partition(args[2], server_id, partitionServers);
+                                partitionServers.Add(args[i]);
                             }
+                            if (partitionServers.Contains(server_id))
+                            {
+                                Partitions.Add(new Partition(args[2], args[3], partitionServers));
+                            }
+                            partitionServers.Clear();
                             break;
                         case "Master":
                             // UNUSED

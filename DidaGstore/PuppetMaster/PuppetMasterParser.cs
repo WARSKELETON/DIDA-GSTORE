@@ -10,8 +10,8 @@ namespace PuppetMaster
     {
         PuppetMaster PuppetMaster;
 
-        public PuppetMasterParser() {
-            PuppetMaster = new PuppetMaster();
+        public PuppetMasterParser(PuppetMaster puppet) {
+            PuppetMaster = puppet;
         }
         public void parse(string cmd)
         {
@@ -34,6 +34,7 @@ namespace PuppetMaster
                 case "Status":
                     break;
                 case "Crash":
+                    PuppetMaster.Crash(args[1]);
                     break;
                 case "Freeze":
                     break;

@@ -13,9 +13,11 @@ namespace PuppetMaster {
     public partial class PuppetMasterForm : Form {
 
         private PuppetMasterParser parser;
+        private PuppetMaster puppetMaster;
         public PuppetMasterForm() {
             InitializeComponent();
-            parser = new PuppetMasterParser();
+            puppetMaster = new PuppetMaster();
+            parser = new PuppetMasterParser(puppetMaster);
         }
 
         private void btnOpenScript_Click(object sender, EventArgs e) {
@@ -38,6 +40,11 @@ namespace PuppetMaster {
                     MessageBox.Show("Error when opening file. " + ex.StackTrace);
                 }
             }
+        }
+
+        private void btnKill_Click(object sender, EventArgs e)
+        {
+            puppetMaster.Crash(txtKill.Text);
         }
     }
 }
