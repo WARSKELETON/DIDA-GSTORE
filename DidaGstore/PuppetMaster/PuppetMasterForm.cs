@@ -46,5 +46,20 @@ namespace PuppetMaster {
         {
             puppetMaster.Crash(txtKill.Text);
         }
+
+        private void btnStatus_Click(object sender, EventArgs e)
+        {
+            puppetMaster.Status();
+        }
+
+        private void btnFreeze_Click(object sender, EventArgs e)
+        {
+            puppetMaster.Freeze(txtFreeze.Text);
+        }
+
+        private void btnUnfreeze_Click(object sender, EventArgs e)
+        {
+            puppetMaster.Unfreeze(txtUnfreeze.Text);
+        }
     }
 }

@@ -12,9 +12,9 @@ namespace GstoreClient
     class GstoreClient
     {
         // ServerId, ServerConnection<GstoreService>
-        private Dictionary<string, GstoreService.GstoreServiceClient> servers = new Dictionary<string, GstoreService.GstoreServiceClient>();
+        private Dictionary<string, GstoreService.GstoreServiceClient> Servers = new Dictionary<string, GstoreService.GstoreServiceClient>();
         // PartitionId, Partition
-        private Dictionary<string, Partition> partitions = new Dictionary<string, Partition>();
+        private Dictionary<string, Partition> Partitions = new Dictionary<string, Partition>();
 
         private string attachedServer = "-1";
 
@@ -24,17 +24,17 @@ namespace GstoreClient
             foreach (KeyValuePair<string, string> item in serversList)
             {
                 GrpcChannel channel = GrpcChannel.ForAddress(item.Value);
-                servers.Add(item.Key, new GstoreService.GstoreServiceClient(channel));
+                Servers.Add(item.Key, new GstoreService.GstoreServiceClient(channel));
             }
             foreach (Partition partition in partitionsList)
             {
-                partitions.Add(partition.Id, partition);
+                Partitions.Add(partition.Id, partition);
             }
-            foreach (var server in servers)
+            foreach (var server in Servers)
             {
                 Console.WriteLine("Existe server: " + server.Key);
             }
-            foreach (var partition in partitions)
+            foreach (var partition in Partitions)
             {
                 Console.WriteLine("Existe partition: " + partition.Key);
             }
@@ -50,14 +50,20 @@ namespace GstoreClient
                 {
                     AttachToRandomServer(partitionId);
                 }
+                else if (serverId != "-1" && attachedServer == "-1")
+                {
+                    AttachToServer(serverId);
+                }
 
-                reply = servers[attachedServer].Read(new ReadRequest() {
+                reply = Servers[attachedServer].Read(new ReadRequest() {
                     PartitionId = partitionId,
                     ObjectId = objectId
                 });
 
             } catch(Exception ex) {
                 RemoveServer();
+                Console.WriteLine(Servers.Count);
+                Console.WriteLine(ex.Message);
                 AttachToRandomServer(partitionId);
                 return Read(partitionId, objectId, "-1");
             }
@@ -76,7 +82,7 @@ namespace GstoreClient
             string masterId = getMasterId(partitionId);
             AttachToServer(masterId);
             try { 
-                WriteReply reply = servers[masterId].Write(new WriteRequest()
+                WriteReply reply = Servers[masterId].Write(new WriteRequest()
                 {
                     PartitionId = partitionId,
                     ObjectId = objectId,
@@ -92,6 +98,7 @@ namespace GstoreClient
             {
                 RemoveServer();
                 Console.WriteLine("Remove on write");
+                Console.WriteLine(ex.Message);
                 Write(partitionId, objectId, value);
                 return false;
             }
@@ -99,27 +106,24 @@ namespace GstoreClient
 
         public StatusReply PrintStatus()
         {
-            /*
-            foreach(KeyValuePair<string, GstoreService.GstoreServiceClient> entry in servers)
+            foreach (Partition partition in Partitions.Values)
             {
-                entry.Value
+                Console.WriteLine(partition.ToString());
             }
-            Console.WriteLine();
-            */
 
             return new StatusReply { Ok = true };
         }
 
         public List<Object> ListServer(string serverId)
         {
-            ListServerReply reply = servers[serverId].ListServer(new ListServerRequest());
+            ListServerReply reply = Servers[serverId].ListServer(new ListServerRequest());
             return reply.Objects.ToList();
         }
 
         public List<Object> ListGlobal()
         {
             List<Object> globalList = new List<Object>();
-            foreach (KeyValuePair<string, GstoreService.GstoreServiceClient> server in servers)
+            foreach (KeyValuePair<string, GstoreService.GstoreServiceClient> server in Servers)
             {
                 ListServerReply reply = server.Value.ListServer(new ListServerRequest());
                 foreach(Object obj in reply.Objects)
@@ -152,7 +156,7 @@ namespace GstoreClient
         private string getMasterId(string partitionId)
         {
             Partition partition = null;
-            if (!partitions.TryGetValue(partitionId, out partition))
+            if (!Partitions.TryGetValue(partitionId, out partition))
             {
                 throw new Exception("Partition doesn't exist.");
             }
@@ -166,7 +170,7 @@ namespace GstoreClient
         private List<string> getAvailableServers(string partitionId)
         {
             Partition partition = null;
-            if (!partitions.TryGetValue(partitionId, out partition))
+            if (!Partitions.TryGetValue(partitionId, out partition))
             {
                 return null;
             }
@@ -187,9 +191,9 @@ namespace GstoreClient
         }
 
         private void RemoveServer() {
-            servers.Remove(attachedServer);
-
-            foreach(Partition partition in partitions.Values) {
+            Servers.Remove(attachedServer);
+            Console.WriteLine("Removed " + attachedServer);
+            foreach(Partition partition in Partitions.Values) {
                 if (partition.Servers.Contains(attachedServer)) {
                     if (attachedServer == partition.Master) {
                         partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];

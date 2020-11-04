@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 
 namespace PuppetMaster
 {
@@ -32,15 +33,19 @@ namespace PuppetMaster
                     PuppetMaster.CreateClient(args[1], args[2], args[3]);
                     break;
                 case "Status":
+                    PuppetMaster.Status();
                     break;
                 case "Crash":
                     PuppetMaster.Crash(args[1]);
                     break;
                 case "Freeze":
+                    PuppetMaster.Freeze(args[1]);
                     break;
                 case "Unfreeze":
+                    PuppetMaster.Unfreeze(args[1]);
                     break;
                 case "Wait":
+                    PuppetMaster.Wait(Int32.Parse(args[1]));
                     break;
             }
         }

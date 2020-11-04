@@ -3,13 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PuppetMaster {
     class PuppetMaster {
 
-        private Dictionary<string, PuppetMasterService.PuppetMasterServiceClient> servers = new Dictionary<string, PuppetMasterService.PuppetMasterServiceClient>();
-        private List<PuppetMasterService.PuppetMasterServiceClient> clients = new List<PuppetMasterService.PuppetMasterServiceClient>();
+        private Dictionary<string, PuppetMasterService.PuppetMasterServiceClient> Servers = new Dictionary<string, PuppetMasterService.PuppetMasterServiceClient>();
+        private List<PuppetMasterService.PuppetMasterServiceClient> Clients = new List<PuppetMasterService.PuppetMasterServiceClient>();
 
         public PuppetMaster() {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -31,23 +32,95 @@ namespace PuppetMaster {
         {
             try
             {
-                servers[serverId].Crash(new CrashRequest());
+                Servers[serverId].Crash(new CrashRequest());
             } catch(Exception ex)
             {
                 Console.WriteLine(ex.Message);
+            } finally
+            {
+                Servers.Remove(serverId);
+            }
+        }
+
+        public void Freeze(string serverId)
+        {
+            try
+            {
+                Servers[serverId].Freeze(new FreezeRequest());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public void Unfreeze(string serverId)
+        {
+            try
+            {
+                Servers[serverId].Unfreeze(new UnfreezeRequest());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public void Wait(int milis)
+        {
+            Thread.Sleep(milis);
+        }
+
+        public void Status()
+        {
+            List<string> serversToRemove = new List<string>();
+            List<PuppetMasterService.PuppetMasterServiceClient> clientsToRemove = new List<PuppetMasterService.PuppetMasterServiceClient>();
+            foreach (KeyValuePair<string, PuppetMasterService.PuppetMasterServiceClient> serverItem in Servers)
+            {
+                try
+                {
+                    serverItem.Value.PrintStatus(new StatusRequest());
+                }
+                catch (Exception ex)
+                {
+                    serversToRemove.Add(serverItem.Key);
+                }
+            }
+
+            foreach (PuppetMasterService.PuppetMasterServiceClient client in Clients)
+            {
+                try
+                {
+                    client.PrintStatus(new StatusRequest());
+                }
+                catch (Exception ex)
+                {
+                    clientsToRemove.Add(client);
+                }
+            }
+
+            foreach (string server in serversToRemove)
+            {
+                Servers.Remove(server);
+            }
+
+
+            foreach (PuppetMasterService.PuppetMasterServiceClient client in clientsToRemove)
+            {
+                Clients.Remove(client);
             }
         }
 
         private void AddServerConnection(string serverId, string url)
         {
             GrpcChannel channel = GrpcChannel.ForAddress(url);
-            servers.Add(serverId, new PuppetMasterService.PuppetMasterServiceClient(channel)); 
+            Servers.Add(serverId, new PuppetMasterService.PuppetMasterServiceClient(channel)); 
         }
 
         private void AddClientConnection(string url)
         {
             GrpcChannel channel = GrpcChannel.ForAddress(url);
-            clients.Add(new PuppetMasterService.PuppetMasterServiceClient(channel));
+            Clients.Add(new PuppetMasterService.PuppetMasterServiceClient(channel));
         }
 
         private void CreateProcess(string type, string args) {

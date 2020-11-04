@@ -26,6 +26,7 @@ namespace GstoreClient
                 Console.WriteLine("Add command: " + Cmds.Count);
                 return;
             }
+
             switch (args[0])
             {
                 case "read":
@@ -34,13 +35,13 @@ namespace GstoreClient
                         Console.WriteLine("Invalid number of arguments: Read partitionId objectId serverId");
                         return;
                     }
-                    string value = Client.Read(args[1], args[2], args[3]);
                     Console.WriteLine($"Client Read {args[1]} {args[2]} {args[3]}");
+                    string value = Client.Read(args[1], args[2], args[3]);
                     Console.WriteLine(value);
                     break;
                 case "write":
-                    bool ok = Client.Write(args[1], args[2], args[3]);
-                    Console.WriteLine($"Client Write {args[1]} {args[2]} {args[3]}");
+                    Console.WriteLine($"Client Write {args[1]} {args[2]} {cmd.Split("\"")[1]}");
+                    bool ok = Client.Write(args[1], args[2], cmd.Split("\"")[1]);
                     Console.WriteLine(ok);
                     break;
                 case "listServer":
