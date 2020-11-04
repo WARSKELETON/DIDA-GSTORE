@@ -61,7 +61,7 @@ namespace GstoreClient
                 });
 
             } catch(Exception ex) {
-                RemoveServer();
+                RemoveServer(attachedServer);
                 Console.WriteLine(Servers.Count);
                 Console.WriteLine(ex.Message);
                 AttachToRandomServer(partitionId);
@@ -96,7 +96,7 @@ namespace GstoreClient
                 return reply.Ok;
             } catch(Exception ex)
             {
-                RemoveServer();
+                RemoveServer(attachedServer);
                 Console.WriteLine("Remove on write");
                 Console.WriteLine(ex.Message);
                 Write(partitionId, objectId, value);
@@ -114,24 +114,34 @@ namespace GstoreClient
             return new StatusReply { Ok = true };
         }
 
-        public List<Object> ListServer(string serverId)
+        public void ListServer(string serverId)
         {
-            ListServerReply reply = Servers[serverId].ListServer(new ListServerRequest());
-            return reply.Objects.ToList();
+            try
+            {
+                ListServerReply reply = Servers[serverId].ListServer(new ListServerRequest());
+                foreach (StoredObject obj in reply.Objects.ToList())
+                {
+                    string frmt = $"Object {obj.ObjectId} with the value {obj.Value} of partition {obj.PartitionId} is stored in server {obj.ServerId}";
+                    if (obj.Master)
+                    {
+                        frmt += " which is the master of the partition";
+                    }
+                    Console.WriteLine(frmt);
+                }
+            }
+            catch (Exception ex) {
+                RemoveServer(serverId);
+                Console.WriteLine(ex.Message);
+            }
         }
 
-        public List<Object> ListGlobal()
+        public void ListGlobal()
         {
             List<Object> globalList = new List<Object>();
             foreach (KeyValuePair<string, GstoreService.GstoreServiceClient> server in Servers)
             {
-                ListServerReply reply = server.Value.ListServer(new ListServerRequest());
-                foreach(Object obj in reply.Objects)
-                {
-                    globalList.Add(obj);
-                }
+                ListServer(server.Key);
             }
-            return globalList;
         }
 
         public void Wait(int milis)
@@ -189,18 +199,18 @@ namespace GstoreClient
             }
             return false;
         }
-
-        private void RemoveServer() {
-            Servers.Remove(attachedServer);
-            Console.WriteLine("Removed " + attachedServer);
+        
+        private void RemoveServer(string serverId) {
+            Servers.Remove(serverId);
+            Console.WriteLine("Removed " + serverId);
             foreach(Partition partition in Partitions.Values) {
-                if (partition.Servers.Contains(attachedServer)) {
-                    if (attachedServer == partition.Master) {
+                if (partition.Servers.Contains(serverId)) {
+                    if (serverId == partition.Master) {
                         partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
                         Console.WriteLine("New Master: " + partition.Master);
                     }
-                    partition.Servers.Remove(attachedServer);
-                    partition.FailedServer.Add(attachedServer);
+                    partition.Servers.Remove(serverId);
+                    partition.FailedServer.Add(serverId);
                 }
             }
         }

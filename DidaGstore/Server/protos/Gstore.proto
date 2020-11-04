@@ -13,10 +13,10 @@ message ListServerRequest {
 }
 
 message ListServerReply {
-	repeated Object objects = 1;
+	repeated StoredObject objects = 1;
 }
 
-message Object {
+message StoredObject {
     bool master = 1;
     string server_id = 2;
     string partition_id = 3;

@@ -235,6 +235,18 @@ namespace GstoreServer
             };
         }
 
+        public ListServerReply ListServer()
+        {
+            ListServerReply reply = new ListServerReply();
+            foreach (StoredObject obj in GstoreRepository.GetAllObjects())
+            {
+                obj.Master = Partitions[obj.PartitionId].Master == Id;
+                obj.ServerId = Id;
+                reply.Objects.Add(obj);
+            }
+            return reply;
+        }
+
         public FreezeReply Freeze() {
             DelayIncomingMessage();
 

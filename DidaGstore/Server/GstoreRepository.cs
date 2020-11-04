@@ -35,5 +35,22 @@ namespace GstoreServer
             Gstore[new Tuple<string, string>(partitionId, objectId)] = value;
             return true;
         }
+
+        public List<StoredObject> GetAllObjects()
+        {
+            List<StoredObject> storedObjects = new List<StoredObject>();
+            foreach (KeyValuePair<Tuple<string, string>, string> item in Gstore)
+            {
+                storedObjects.Add(new StoredObject
+                {
+                    Master = false,
+                    ServerId = "",
+                    PartitionId = item.Key.Item1,
+                    ObjectId = item.Key.Item2,
+                    Value = item.Value
+                });
+            }
+            return storedObjects;
+        }
     }
 }

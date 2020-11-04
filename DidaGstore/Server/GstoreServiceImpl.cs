@@ -29,6 +29,12 @@ namespace GstoreServer
             return Task.FromResult(reply);
         }
 
+        public override Task<ListServerReply> ListServer(ListServerRequest request, ServerCallContext context)
+        {
+            ListServerReply reply = GstoreServer.ListServer();
+            return Task.FromResult(reply);
+        }
+
         public override Task<PingReply> Ping(PingRequest request, ServerCallContext context)
         {
             PingReply reply = GstoreServer.Ping();

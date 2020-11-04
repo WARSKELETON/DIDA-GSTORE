@@ -45,12 +45,12 @@ namespace GstoreClient
                     Console.WriteLine(ok);
                     break;
                 case "listServer":
-                    //Client.ListServer(args[1]);
                     Console.WriteLine("Client ListServer");
+                    Client.ListServer(args[1]);
                     break;
                 case "listGlobal":
-                    //Client.ListGlobal();
                     Console.WriteLine("Client ListGlobal");
+                    Client.ListGlobal();
                     break;
                 case "wait":
                     Client.Wait(Int32.Parse(args[1]));
