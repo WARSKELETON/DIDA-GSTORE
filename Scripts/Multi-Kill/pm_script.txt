@@ -1,0 +1,16 @@
+ReplicationFactor 4
+Partition 4 p1 s1 s2 s3 s4
+Partition 4 p2 s2 s3 s5 s6
+Server s1 http://localhost:2001 0 100
+Server s2 http://localhost:2002 100 300
+Server s3 http://localhost:2003 0 100
+Server s4 http://localhost:2004 100 300
+Server s5 http://localhost:2005 0 100
+Server s6 http://localhost:2006 100 300
+Client mary http://localhost:6001 client_script1
+Client alice http://localhost:6002 client_script2
+Client eve http://localhost:6003 client_script3
+Wait 6000
+Crash s1
+Crash s2
+Crash s3

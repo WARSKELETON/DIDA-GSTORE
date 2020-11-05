@@ -23,7 +23,6 @@ namespace GstoreClient
             if (Repeat && !args[0].Equals("end-repeat"))
             {
                 Cmds.Add(cmd);
-                Console.WriteLine("Add command: " + Cmds.Count);
                 return;
             }
 
@@ -57,13 +56,11 @@ namespace GstoreClient
                     Console.WriteLine("Client Wait");
                     break;
                 case "begin-repeat":
-                    Console.WriteLine("begin-repeat");
                     Iterations = Int32.Parse(args[1]);
                     Repeat = true;
                     break;
                 case "end-repeat":
                     Repeat = false;
-                    Console.WriteLine("end-repeat");
                     for (int i = 0; i < Iterations; i++)
                     {
                         foreach(string command in Cmds)

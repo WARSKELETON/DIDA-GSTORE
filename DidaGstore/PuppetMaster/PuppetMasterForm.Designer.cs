@@ -32,6 +32,9 @@
             this.btnUnfreeze = new System.Windows.Forms.Button();
             this.txtFreeze = new System.Windows.Forms.TextBox();
             this.txtUnfreeze = new System.Windows.Forms.TextBox();
+            this.labelKill = new System.Windows.Forms.Label();
+            this.labelFreeze = new System.Windows.Forms.Label();
+            this.labelUnfreeze = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // openScriptDialog
@@ -43,7 +46,7 @@
             this.btnOpenScript.Location = new System.Drawing.Point(31, 26);
             this.btnOpenScript.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnOpenScript.Name = "btnOpenScript";
-            this.btnOpenScript.Size = new System.Drawing.Size(113, 28);
+            this.btnOpenScript.Size = new System.Drawing.Size(201, 28);
             this.btnOpenScript.TabIndex = 0;
             this.btnOpenScript.Text = "Open Script";
             this.btnOpenScript.UseVisualStyleBackColor = true;
@@ -51,26 +54,26 @@
             // 
             // btnKill
             // 
-            this.btnKill.Location = new System.Drawing.Point(31, 87);
+            this.btnKill.Location = new System.Drawing.Point(157, 105);
             this.btnKill.Name = "btnKill";
-            this.btnKill.Size = new System.Drawing.Size(335, 134);
+            this.btnKill.Size = new System.Drawing.Size(75, 23);
             this.btnKill.TabIndex = 1;
-            this.btnKill.Text = "Kill";
+            this.btnKill.Text = "Crash";
             this.btnKill.UseVisualStyleBackColor = true;
             this.btnKill.Click += new System.EventHandler(this.btnKill_Click);
             // 
             // txtKill
             // 
-            this.txtKill.Location = new System.Drawing.Point(391, 87);
+            this.txtKill.Location = new System.Drawing.Point(31, 105);
             this.txtKill.Name = "txtKill";
             this.txtKill.Size = new System.Drawing.Size(100, 23);
             this.txtKill.TabIndex = 2;
             // 
             // btnStatus
             // 
-            this.btnStatus.Location = new System.Drawing.Point(31, 303);
+            this.btnStatus.Location = new System.Drawing.Point(31, 265);
             this.btnStatus.Name = "btnStatus";
-            this.btnStatus.Size = new System.Drawing.Size(75, 23);
+            this.btnStatus.Size = new System.Drawing.Size(201, 23);
             this.btnStatus.TabIndex = 3;
             this.btnStatus.Text = "Status";
             this.btnStatus.UseVisualStyleBackColor = true;
@@ -78,7 +81,7 @@
             // 
             // btnFreeze
             // 
-            this.btnFreeze.Location = new System.Drawing.Point(31, 242);
+            this.btnFreeze.Location = new System.Drawing.Point(157, 159);
             this.btnFreeze.Name = "btnFreeze";
             this.btnFreeze.Size = new System.Drawing.Size(75, 23);
             this.btnFreeze.TabIndex = 4;
@@ -88,7 +91,7 @@
             // 
             // btnUnfreeze
             // 
-            this.btnUnfreeze.Location = new System.Drawing.Point(31, 272);
+            this.btnUnfreeze.Location = new System.Drawing.Point(157, 213);
             this.btnUnfreeze.Name = "btnUnfreeze";
             this.btnUnfreeze.Size = new System.Drawing.Size(75, 23);
             this.btnUnfreeze.TabIndex = 5;
@@ -98,23 +101,53 @@
             // 
             // txtFreeze
             // 
-            this.txtFreeze.Location = new System.Drawing.Point(132, 242);
+            this.txtFreeze.Location = new System.Drawing.Point(31, 159);
             this.txtFreeze.Name = "txtFreeze";
             this.txtFreeze.Size = new System.Drawing.Size(100, 23);
             this.txtFreeze.TabIndex = 6;
             // 
             // txtUnfreeze
             // 
-            this.txtUnfreeze.Location = new System.Drawing.Point(132, 273);
+            this.txtUnfreeze.Location = new System.Drawing.Point(31, 213);
             this.txtUnfreeze.Name = "txtUnfreeze";
             this.txtUnfreeze.Size = new System.Drawing.Size(100, 23);
             this.txtUnfreeze.TabIndex = 6;
+            // 
+            // labelKill
+            // 
+            this.labelKill.AutoSize = true;
+            this.labelKill.Location = new System.Drawing.Point(31, 87);
+            this.labelKill.Name = "labelKill";
+            this.labelKill.Size = new System.Drawing.Size(53, 15);
+            this.labelKill.TabIndex = 7;
+            this.labelKill.Text = "Server ID";
+            // 
+            // labelFreeze
+            // 
+            this.labelFreeze.AutoSize = true;
+            this.labelFreeze.Location = new System.Drawing.Point(31, 141);
+            this.labelFreeze.Name = "labelFreeze";
+            this.labelFreeze.Size = new System.Drawing.Size(53, 15);
+            this.labelFreeze.TabIndex = 8;
+            this.labelFreeze.Text = "Server ID";
+            // 
+            // labelUnfreeze
+            // 
+            this.labelUnfreeze.AutoSize = true;
+            this.labelUnfreeze.Location = new System.Drawing.Point(31, 195);
+            this.labelUnfreeze.Name = "labelUnfreeze";
+            this.labelUnfreeze.Size = new System.Drawing.Size(53, 15);
+            this.labelUnfreeze.TabIndex = 9;
+            this.labelUnfreeze.Text = "Server ID";
             // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(700, 338);
+            this.ClientSize = new System.Drawing.Size(272, 338);
+            this.Controls.Add(this.labelUnfreeze);
+            this.Controls.Add(this.labelFreeze);
+            this.Controls.Add(this.labelKill);
             this.Controls.Add(this.txtUnfreeze);
             this.Controls.Add(this.txtFreeze);
             this.Controls.Add(this.btnUnfreeze);
@@ -144,6 +177,9 @@
         private System.Windows.Forms.Button btnUnfreeze;
         private System.Windows.Forms.TextBox txtFreeze;
         private System.Windows.Forms.TextBox txtUnfreeze;
+        private System.Windows.Forms.Label labelKill;
+        private System.Windows.Forms.Label labelFreeze;
+        private System.Windows.Forms.Label labelUnfreeze;
     }
 }
 

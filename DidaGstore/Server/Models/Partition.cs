@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 namespace GstoreServer.Models
 {
@@ -15,12 +16,15 @@ namespace GstoreServer.Models
 
         public List<string> FailedServer { get; }
 
+        public ManualResetEvent Mre { get; }
+
         public Partition(string id, string master, List<string> servers)
         {
             this.Id = id;
             this.Master = master;
             this.Servers = new List<string>(servers);
             this.FailedServer = new List<string>();
+            this.Mre = new ManualResetEvent(false);
         }
 
         public override string ToString()

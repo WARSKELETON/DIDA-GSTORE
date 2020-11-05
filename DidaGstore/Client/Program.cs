@@ -19,16 +19,6 @@ namespace GstoreClient
             CommandParser parser = new CommandParser(client);
             string path = Regex.Replace(Path.GetFullPath(args[2]), "PuppetMaster", "Client");
 
-            if (args.Length == 3 && File.Exists(path)) {
-                StreamReader file = new StreamReader(path);
-                string line;
-                while ((line = file.ReadLine()) != null)
-                {
-                    parser.Parse(line);
-                }
-                file.Close();
-            }
-
             string Url = args[1];
             Regex r = new Regex(@"^(?<proto>\w+):\/\/[^\/]+?:(?<port>\d+)?", RegexOptions.None, TimeSpan.FromMilliseconds(150));
             Match m = r.Match(Url);
@@ -40,6 +30,17 @@ namespace GstoreClient
                 Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
             };
             server.Start();
+
+            if (args.Length == 3 && File.Exists(path)) {
+                StreamReader file = new StreamReader(path);
+                string line;
+                while ((line = file.ReadLine()) != null)
+                {
+                    parser.Parse(line);
+                }
+                file.Close();
+            }
+
             while (true) ;
         }
     }

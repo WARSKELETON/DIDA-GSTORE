@@ -41,6 +41,8 @@ namespace GstoreServer
             List<StoredObject> storedObjects = new List<StoredObject>();
             foreach (KeyValuePair<Tuple<string, string>, string> item in Gstore)
             {
+                if (item.Value == null) continue;
+
                 storedObjects.Add(new StoredObject
                 {
                     Master = false,

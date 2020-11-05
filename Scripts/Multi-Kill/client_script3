@@ -1,0 +1,8 @@
+begin-repeat 5
+read p1 obj-1 s1
+wait 1000
+end-repeat
+begin-repeat 5
+read p2 obj-2 s2
+wait 1000
+end-repeat

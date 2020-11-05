@@ -60,8 +60,6 @@ namespace GstoreClient
 
             } catch(Exception ex) {
                 RemoveServer(attachedServer);
-                Console.WriteLine(Servers.Count);
-                Console.WriteLine(ex.Message);
                 AttachToRandomServer(partitionId);
                 return Read(partitionId, objectId, "-1");
             }
@@ -96,9 +94,7 @@ namespace GstoreClient
             {
                 RemoveServer(attachedServer);
                 Console.WriteLine("Remove on write");
-                Console.WriteLine(ex.Message);
-                Write(partitionId, objectId, value);
-                return false;
+                return Write(partitionId, objectId, value);
             }
         }
 
@@ -129,7 +125,6 @@ namespace GstoreClient
             }
             catch (Exception ex) {
                 RemoveServer(serverId);
-                Console.WriteLine(ex.Message);
             }
         }
 

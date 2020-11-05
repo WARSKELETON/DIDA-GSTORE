@@ -23,7 +23,6 @@ namespace GstoreServer
         private readonly Dictionary<string, string> AllServerIdsServerUrls;
         private readonly Object freezed = new Object();
 
-        static ManualResetEvent mre = new ManualResetEvent(false);
         static ManualResetEvent mreFreezed = new ManualResetEvent(false);
 
         public GstoreServer(string serverId, string url, int minDelay, int maxDelay, List<Partition> partitions, Dictionary<string, string> allServerIdsServerUrls)
@@ -157,7 +156,7 @@ namespace GstoreServer
             {
                 lock (key)
                 {
-                    mre.WaitOne();
+                    Partitions[partitionId].Mre.WaitOne();
                 }
             });
 
@@ -177,8 +176,8 @@ namespace GstoreServer
 
             GstoreRepository.Write(partitionId, objectId, value);
 
-            mre.Set();
-            mre.Reset();
+            Partitions[partitionId].Mre.Set();
+            Partitions[partitionId].Mre.Reset();
 
             return new UpdateReply
             {
@@ -198,7 +197,7 @@ namespace GstoreServer
 
         public PingReplicaReply PingReplica()
         {
-            Console.WriteLine("Received Ping.");
+            // Console.WriteLine("Received Ping.");
 
             lock (freezed) { }
 
@@ -334,7 +333,7 @@ namespace GstoreServer
                     {
                         try
                         {
-                            Console.WriteLine("Initiate Ping Request to: " + replica.Key);
+                            // Console.WriteLine("Initiate Ping Request to: " + replica.Key);
                             PingReplicaReply reply = replica.Value.PingReplica(new PingReplicaRequest());
                         }
                         catch (Exception ex)
@@ -346,6 +345,8 @@ namespace GstoreServer
                                 lock(Partitions[partition.Id]) {
                                     if (partition.Servers.Contains(replica.Key)) {
                                         if (replica.Key == partition.Master) {
+                                            partition.Mre.Set();
+                                            partition.Mre.Reset();
                                             partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
                                         }
                                         partition.Servers.Remove(replica.Key);
