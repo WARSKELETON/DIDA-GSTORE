@@ -9,8 +9,8 @@ using System.Windows.Forms;
 namespace PuppetMaster {
     class PuppetMaster {
 
-        private Dictionary<string, PuppetMasterService.PuppetMasterServiceClient> Servers = new Dictionary<string, PuppetMasterService.PuppetMasterServiceClient>();
-        private List<PuppetMasterService.PuppetMasterServiceClient> Clients = new List<PuppetMasterService.PuppetMasterServiceClient>();
+        private readonly Dictionary<string, PuppetMasterService.PuppetMasterServiceClient> Servers = new Dictionary<string, PuppetMasterService.PuppetMasterServiceClient>();
+        private readonly List<PuppetMasterService.PuppetMasterServiceClient> Clients = new List<PuppetMasterService.PuppetMasterServiceClient>();
 
         public PuppetMaster() {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);

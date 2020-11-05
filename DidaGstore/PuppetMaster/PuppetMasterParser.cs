@@ -10,11 +10,17 @@ namespace PuppetMaster
     class PuppetMasterParser
     {
         PuppetMaster PuppetMaster;
+        const string SYSTEM_CONFIG_NAME = "system-config.txt";
+        enum NodeType
+        {
+            Client,
+            Server
+        };
 
         public PuppetMasterParser(PuppetMaster puppet) {
             PuppetMaster = puppet;
         }
-        public void parse(string cmd)
+        public void Parse(string cmd)
         {
             string[] args = cmd.Split(" ");
 
@@ -50,38 +56,34 @@ namespace PuppetMaster
             }
         }
 
-        public void generateConfig(string fileString)
+        private void GenerateConfigFile(NodeType nodeType, MatchCollection serverMatches, MatchCollection partitionMatches)
+        {
+            string configPath = Regex.Replace(AppDomain.CurrentDomain.BaseDirectory, "PuppetMaster", nodeType.ToString()) + $"\\{SYSTEM_CONFIG_NAME}";
+            FileStream configStream = new FileStream(configPath, FileMode.Create);
+            using StreamWriter configWriter = new StreamWriter(configStream, Encoding.UTF8);
+
+            foreach (Match match in serverMatches)
+            {
+                string serverLine = $"{match.Groups["server_id"].Value} {match.Groups["server_url"].Value}";
+                configWriter.WriteLine(serverLine);
+            }
+
+            foreach (Match match in partitionMatches)
+            {
+                string partitionLine = match.Value;
+                configWriter.WriteLine(partitionLine);
+            }
+        }
+
+        public void GenerateSystemConfig(string fileString)
         {
             Regex serverRegex = new Regex(@"Server\s(?<server_id>[^\s]+)\s(?<server_url>\w+:\/\/[^\/]+?:\d+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
             Regex partitionRegex = new Regex(@"Partition\s(?<r_factor>\d)\s(?<partition_name>[^\s]+)(?<servers_ids>(\s[^\s]+)+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
             MatchCollection serverMatches = serverRegex.Matches(fileString);
             MatchCollection partitionMatches = partitionRegex.Matches(fileString);
 
-            string clientConfigPath = Regex.Replace(AppDomain.CurrentDomain.BaseDirectory, "PuppetMaster", "Client") + "\\system-config.txt";
-            string serverConfigPath = Regex.Replace(AppDomain.CurrentDomain.BaseDirectory, "PuppetMaster", "Server") + "\\system-config.txt";
-            FileStream clientConfigStream = new FileStream(clientConfigPath, FileMode.Create);
-            FileStream serverConfigStream = new FileStream(serverConfigPath, FileMode.Create);
-            using StreamWriter clientConfigWriter = new StreamWriter(clientConfigStream, Encoding.UTF8),
-                serverConfigWriter = new StreamWriter(serverConfigStream, Encoding.UTF8);
-
-            foreach (Match match in serverMatches)
-            {
-                string serverLine = $"{match.Groups["server_id"].Value} {match.Groups["server_url"].Value}";
-                clientConfigWriter.WriteLine(serverLine);
-                serverConfigWriter.WriteLine(serverLine);
-            }
-
-            foreach (Match match in partitionMatches)
-            {
-                string partitionLine = match.Value;
-                string[] serversIds = match.Groups["servers_ids"].Value.Trim().Split(" ");
-                int randomServerIndex = new Random().Next(serversIds.Length);
-                string masterLine = $"Master {match.Groups["partition_name"]} {serversIds[randomServerIndex]}";
-                clientConfigWriter.WriteLine(partitionLine);
-                serverConfigWriter.WriteLine(partitionLine);
-                clientConfigWriter.WriteLine(masterLine);
-                serverConfigWriter.WriteLine(masterLine);
-            }
+            GenerateConfigFile(NodeType.Server, serverMatches, partitionMatches);
+            GenerateConfigFile(NodeType.Client, serverMatches, partitionMatches);
         }
     }
 }

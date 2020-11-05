@@ -8,7 +8,7 @@ namespace GstoreServer
 {
     class GstoreReplicaServiceImpl : GstoreReplicaService.GstoreReplicaServiceBase
     {
-        private GstoreServer GstoreServer;
+        private readonly GstoreServer GstoreServer;
 
         public GstoreReplicaServiceImpl(GstoreServer server)
         {

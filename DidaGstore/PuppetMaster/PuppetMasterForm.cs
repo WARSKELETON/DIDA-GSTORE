@@ -12,8 +12,8 @@ using System.Windows.Forms;
 namespace PuppetMaster {
     public partial class PuppetMasterForm : Form {
 
-        private PuppetMasterParser parser;
-        private PuppetMaster puppetMaster;
+        private readonly PuppetMasterParser parser;
+        private readonly PuppetMaster puppetMaster;
         public PuppetMasterForm() {
             InitializeComponent();
             puppetMaster = new PuppetMaster();
@@ -28,11 +28,11 @@ namespace PuppetMaster {
                     StreamReader file = new StreamReader(path);
                     StreamReader fileConfig = new StreamReader(path);
                     string fileString = fileConfig.ReadToEnd();
-                    parser.generateConfig(fileString);
+                    parser.GenerateSystemConfig(fileString);
                     fileConfig.Close();
                     string line;
                     while ((line = file.ReadLine()) != null) {
-                        parser.parse(line);
+                        parser.Parse(line);
                     }
                     file.Close();
 

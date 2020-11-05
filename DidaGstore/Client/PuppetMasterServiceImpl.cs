@@ -9,7 +9,7 @@ namespace GstoreClient
     class PuppetMasterServiceImpl : PuppetMasterService.PuppetMasterServiceBase
     {
 
-        private GstoreClient GstoreClient;
+        private readonly GstoreClient GstoreClient;
 
         public PuppetMasterServiceImpl(GstoreClient client)
         {

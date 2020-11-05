@@ -6,7 +6,7 @@ namespace GstoreClient
 {
     class CommandParser
     {
-        private GstoreClient Client = null;
+        private readonly GstoreClient Client = null;
         private int Iterations = 0;
         private bool Repeat = false;
         List<string> Cmds = null;
@@ -17,7 +17,7 @@ namespace GstoreClient
             Cmds = new List<string>();
         }
 
-        public void parse(string cmd)
+        public void Parse(string cmd)
         {
             string[] args = cmd.Split(" ");
             if (Repeat && !args[0].Equals("end-repeat"))
@@ -68,7 +68,7 @@ namespace GstoreClient
                     {
                         foreach(string command in Cmds)
                         {
-                            parse(command.Replace("$i", $"{i + 1}"));
+                            Parse(command.Replace("$i", $"{i + 1}"));
                         }
                     }
                     Cmds.Clear();

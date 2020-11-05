@@ -29,8 +29,7 @@ namespace GstoreServer.Parsers
                     switch (args[0])
                     {
                         case "Partition":
-                            // SUGESTAO: MASTER SER O PRIMEIRO DA LISTA NA PARTITION FORNECIDA
-                            for (int i = 3; i < args.Length; i++) // Start after the master
+                            for (int i = 3; i < args.Length; i++)
                             {
                                 partitionServers.Add(args[i]);
                             }
@@ -39,9 +38,6 @@ namespace GstoreServer.Parsers
                                 Partitions.Add(new Partition(args[2], args[3], partitionServers));
                             }
                             partitionServers.Clear();
-                            break;
-                        case "Master":
-                            // UNUSED
                             break;
                         default:
                             Servers.Add(args[0], args[1]);

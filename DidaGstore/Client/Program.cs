@@ -12,7 +12,7 @@ namespace GstoreClient
     {
         static void Main(string[] args)
         {
-            // Read the configuration file generated on the server
+            // Read the system configuration file
             ConfigParser config_parser = new ConfigParser();
             GstoreClient client = new GstoreClient(config_parser.Servers, config_parser.Partitions);
 
@@ -24,7 +24,7 @@ namespace GstoreClient
                 string line;
                 while ((line = file.ReadLine()) != null)
                 {
-                    parser.parse(line);
+                    parser.Parse(line);
                 }
                 file.Close();
             }
@@ -40,9 +40,7 @@ namespace GstoreClient
                 Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
             };
             server.Start();
-            while (true) {
-
-            }
+            while (true) ;
         }
     }
 }

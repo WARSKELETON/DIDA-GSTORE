@@ -11,17 +11,17 @@ namespace GstoreServer
 {
     class GstoreServer
     {
-        private int PING_TIMEOUT = 3000;
+        private const int PING_TIMEOUT = 3000;
 
-        private string Id;
-        private string Url;
-        private int MinDelay;
-        private int MaxDelay;
-        private IGstoreRepository GstoreRepository;
-        private Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient> Replicas;
-        private Dictionary<string, Partition> Partitions;
-        private Dictionary<string, string> AllServerIdsServerUrls;
-        private Object freezed = new Object();
+        private readonly string Id;
+        private readonly string Url;
+        private readonly int MinDelay;
+        private readonly int MaxDelay;
+        private readonly IGstoreRepository GstoreRepository;
+        private readonly Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient> Replicas;
+        private readonly Dictionary<string, Partition> Partitions;
+        private readonly Dictionary<string, string> AllServerIdsServerUrls;
+        private readonly Object freezed = new Object();
 
         static ManualResetEvent mre = new ManualResetEvent(false);
         static ManualResetEvent mreFreezed = new ManualResetEvent(false);
@@ -53,7 +53,6 @@ namespace GstoreServer
 
             Console.WriteLine("Going to read: " + partitionId + ", " + objectId);
 
-            // Delay for read and write or every message
             DelayIncomingMessage();
 
             string value;
@@ -113,7 +112,6 @@ namespace GstoreServer
                     Console.WriteLine("Locked Servers");
 
                     foreach (string serverId in Partitions[partitionId].Servers) {
-                        // Verificar se deu
                         if (serverId == Id) continue;
                         try
                         {
@@ -226,8 +224,6 @@ namespace GstoreServer
         public CrashReply Crash() {
             Console.WriteLine("Going to Crash.");
             DelayIncomingMessage();
-
-            // Mandar para as outras o aviso de que a replica crashou?
             Process.GetCurrentProcess().Kill();
             Console.WriteLine("Finished Crashing, failed.");
             return new CrashReply {
@@ -331,7 +327,6 @@ namespace GstoreServer
             {
                 while (true)
                 {
-                    // TODO ADD LOCKS
                     Thread.Sleep(PING_TIMEOUT);
 
                     List<string> failedServers = new List<string>();

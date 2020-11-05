@@ -7,7 +7,7 @@ namespace GstoreServer
 {
     class GstoreRepository : IGstoreRepository
     {
-        private Dictionary<Tuple<string, string>, string> Gstore;
+        private readonly Dictionary<Tuple<string, string>, string> Gstore;
 
         public GstoreRepository()
         {

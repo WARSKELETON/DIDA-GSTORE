@@ -1,8 +1,6 @@
-﻿using Grpc.Core;
-using Grpc.Net.Client;
+﻿using Grpc.Net.Client;
 using GstoreClient.Models;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,9 +10,9 @@ namespace GstoreClient
     class GstoreClient
     {
         // ServerId, ServerConnection<GstoreService>
-        private Dictionary<string, GstoreService.GstoreServiceClient> Servers = new Dictionary<string, GstoreService.GstoreServiceClient>();
+        private readonly Dictionary<string, GstoreService.GstoreServiceClient> Servers = new Dictionary<string, GstoreService.GstoreServiceClient>();
         // PartitionId, Partition
-        private Dictionary<string, Partition> Partitions = new Dictionary<string, Partition>();
+        private readonly Dictionary<string, Partition> Partitions = new Dictionary<string, Partition>();
 
         private string attachedServer = "-1";
 
@@ -79,7 +77,7 @@ namespace GstoreClient
 
         public bool Write(string partitionId, string objectId, string value)
         {
-            string masterId = getMasterId(partitionId);
+            string masterId = GetMasterId(partitionId);
             AttachToServer(masterId);
             try { 
                 WriteReply reply = Servers[masterId].Write(new WriteRequest()
@@ -137,7 +135,6 @@ namespace GstoreClient
 
         public void ListGlobal()
         {
-            List<Object> globalList = new List<Object>();
             foreach (KeyValuePair<string, GstoreService.GstoreServiceClient> server in Servers)
             {
                 ListServer(server.Key);
@@ -152,7 +149,7 @@ namespace GstoreClient
 
         private void AttachToRandomServer(string partitionId)
         {
-            List<string> availableServers = getAvailableServers(partitionId);
+            List<string> availableServers = GetAvailableServers(partitionId);
             int index = (new Random()).Next(0, availableServers.Count);
 
             attachedServer = availableServers[index];
@@ -163,10 +160,9 @@ namespace GstoreClient
             attachedServer = serverId;
         }
 
-        private string getMasterId(string partitionId)
+        private string GetMasterId(string partitionId)
         {
-            Partition partition = null;
-            if (!Partitions.TryGetValue(partitionId, out partition))
+            if (!Partitions.TryGetValue(partitionId, out Partition partition))
             {
                 throw new Exception("Partition doesn't exist.");
             }
@@ -177,20 +173,18 @@ namespace GstoreClient
             throw new Exception("There is no master for the given partition.");
         }
 
-        private List<string> getAvailableServers(string partitionId)
+        private List<string> GetAvailableServers(string partitionId)
         {
-            Partition partition = null;
-            if (!Partitions.TryGetValue(partitionId, out partition))
+            if (!Partitions.TryGetValue(partitionId, out Partition partition))
             {
                 return null;
             }
-            // Verificar quais servers estao em baixo
             return partition.Servers;
         }
 
         private bool ServerExists(string partitionId, string serverId)
         {
-            foreach (string server in getAvailableServers(partitionId))
+            foreach (string server in GetAvailableServers(partitionId))
             {
                 if (server == serverId)
                 {
