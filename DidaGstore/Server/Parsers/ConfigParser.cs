@@ -13,6 +13,8 @@ namespace GstoreServer.Parsers
         public List<Partition> Partitions { get; }
         public Dictionary<string, string> Servers { get; }
 
+        public int ReplicationFactor { get; }
+
         public ConfigParser(string server_id)
         {
             Partitions = new List<Partition>();
@@ -38,6 +40,9 @@ namespace GstoreServer.Parsers
                                 Partitions.Add(new Partition(args[2], args[3], partitionServers));
                             }
                             partitionServers.Clear();
+                            break;
+                        case "ReplicationFactor":
+                            ReplicationFactor = Int32.Parse(args[1]);
                             break;
                         default:
                             Servers.Add(args[0], args[1]);

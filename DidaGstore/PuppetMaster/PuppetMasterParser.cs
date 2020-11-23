@@ -56,11 +56,13 @@ namespace PuppetMaster
             }
         }
 
-        private void GenerateConfigFile(NodeType nodeType, MatchCollection serverMatches, MatchCollection partitionMatches)
+        private void GenerateConfigFile(NodeType nodeType, MatchCollection serverMatches, MatchCollection partitionMatches, Match replicationFactorMatch)
         {
             string configPath = Regex.Replace(AppDomain.CurrentDomain.BaseDirectory, "PuppetMaster", nodeType.ToString()) + $"\\{SYSTEM_CONFIG_NAME}";
             FileStream configStream = new FileStream(configPath, FileMode.Create);
             using StreamWriter configWriter = new StreamWriter(configStream, Encoding.UTF8);
+
+            configWriter.WriteLine($"ReplicationFactor {replicationFactorMatch.Groups["replication_factor"].Value}");
 
             foreach (Match match in serverMatches)
             {
@@ -79,11 +81,13 @@ namespace PuppetMaster
         {
             Regex serverRegex = new Regex(@"Server\s(?<server_id>[^\s]+)\s(?<server_url>\w+:\/\/[^\/]+?:\d+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
             Regex partitionRegex = new Regex(@"Partition\s(?<r_factor>\d)\s(?<partition_name>[^\s]+)(?<servers_ids>(\s[^\s]+)+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
+            Regex replicationFactorRegex = new Regex(@"ReplicationFactor\s(?<replication_factor>[\d]+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
             MatchCollection serverMatches = serverRegex.Matches(fileString);
             MatchCollection partitionMatches = partitionRegex.Matches(fileString);
+            Match replicationFactorMatch = replicationFactorRegex.Match(fileString);
 
-            GenerateConfigFile(NodeType.Server, serverMatches, partitionMatches);
-            GenerateConfigFile(NodeType.Client, serverMatches, partitionMatches);
+            GenerateConfigFile(NodeType.Server, serverMatches, partitionMatches, replicationFactorMatch);
+            GenerateConfigFile(NodeType.Client, serverMatches, partitionMatches, replicationFactorMatch);
         }
     }
 }

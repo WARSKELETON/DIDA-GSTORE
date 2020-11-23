@@ -26,7 +26,7 @@ namespace GstoreServer
 
         static ManualResetEvent mreFreezed = new ManualResetEvent(false);
 
-        public GstoreServer(string serverId, string url, int minDelay, int maxDelay, List<Partition> partitions, Dictionary<string, string> allServerIdsServerUrls)
+        public GstoreServer(string serverId, string url, int minDelay, int maxDelay, List<Partition> partitions, Dictionary<string, string> allServerIdsServerUrls, int replicationFactor)
         {
             Id = serverId;
             Url = url;
@@ -36,8 +36,9 @@ namespace GstoreServer
             Replicas = new Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient>();
             Partitions = new Dictionary<string, Partition>();
             AllServerIdsServerUrls = allServerIdsServerUrls;
+            MaxFaults = (int)(Math.Ceiling(replicationFactor / 2.0) - 1.0);
 
-            MaxFaults = allServerIdsServerUrls.Count / 2;
+            PrintStatus();
 
             foreach (Partition partition in partitions)
             {
@@ -232,6 +233,7 @@ namespace GstoreServer
 
             DelayIncomingMessage();
 
+            // Ver o log todos os que têm write id maior, se houver um com o mesmo object id então é chill não dá update
             if(writeId > Partitions[partitionId].CurrentWriteId)
             {
                 Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);

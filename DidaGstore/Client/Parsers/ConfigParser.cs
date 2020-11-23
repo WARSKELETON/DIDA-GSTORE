@@ -34,6 +34,8 @@ namespace GstoreClient.Parsers
                             }
                             Partitions.Add(new Partition(args[2], args[3], partitionServers));
                             break;
+                        case "ReplicationFactor":
+                            break;
                         default:
                             Servers.Add(args[0], args[1]);
                             break;
