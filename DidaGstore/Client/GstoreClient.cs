@@ -93,6 +93,7 @@ namespace GstoreClient
             } catch(Exception ex)
             {
                 RemoveServer(attachedServer);
+                Console.WriteLine(ex.Message);
                 Console.WriteLine("Remove on write");
                 return Write(partitionId, objectId, value);
             }

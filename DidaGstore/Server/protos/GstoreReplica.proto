@@ -20,6 +20,7 @@ message UpdateRequest {
 	string partition_id = 1;
 	string object_id = 2;
 	string value = 3;
+	int32 write_id = 4;
 }
 
 message UpdateReply {

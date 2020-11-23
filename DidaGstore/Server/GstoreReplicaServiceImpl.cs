@@ -24,7 +24,7 @@ namespace GstoreServer
 
         public override Task<UpdateReply> Update(UpdateRequest request, ServerCallContext context)
         {
-            UpdateReply reply = GstoreServer.Update(request.PartitionId, request.ObjectId, request.Value);
+            UpdateReply reply = GstoreServer.AdvancedUpdate(request.PartitionId, request.ObjectId, request.Value, request.WriteId);
 
             return Task.FromResult(reply);
         }

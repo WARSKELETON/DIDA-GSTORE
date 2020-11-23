@@ -15,6 +15,7 @@ namespace GstoreServer
 
         private readonly string Id;
         private readonly string Url;
+        private readonly int MaxFaults;
         private readonly int MinDelay;
         private readonly int MaxDelay;
         private readonly IGstoreRepository GstoreRepository;
@@ -35,6 +36,8 @@ namespace GstoreServer
             Replicas = new Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient>();
             Partitions = new Dictionary<string, Partition>();
             AllServerIdsServerUrls = allServerIdsServerUrls;
+
+            MaxFaults = allServerIdsServerUrls.Count / 2;
 
             foreach (Partition partition in partitions)
             {
@@ -138,6 +141,60 @@ namespace GstoreServer
             };
         }
 
+        public WriteReply AdvancedWrite(string partitionId, string objectId, string value)
+        {
+            lock (freezed) { }
+            DelayIncomingMessage();
+            Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
+            if (key == null)
+            {
+                GstoreRepository.Write(partitionId, objectId, null);
+                key = GstoreRepository.GetKey(partitionId, objectId);
+            }
+            
+            int attempts = 0;
+            UpdateRequest updateRequest = new UpdateRequest
+            {
+                PartitionId = partitionId,
+                ObjectId = objectId,
+                Value = value,
+                WriteId = Partitions[partitionId].CurrentWriteId
+            };
+            Partitions[partitionId].AddUpdate(Partitions[partitionId].CurrentWriteId, partitionId, objectId, value);
+            GstoreRepository.Write(partitionId, objectId, value);
+            lock (Partitions[partitionId])
+            {
+                foreach (string serverId in Partitions[partitionId].Servers)
+                {
+                    if (serverId == Id) continue;
+                    try
+                    {
+                        if (attempts >= MaxFaults)
+                        {
+                            // Se nao funcionar, criar thread
+                            Console.WriteLine("Updating server async: " + serverId);
+                            // the code that you want to measure comes here
+                            Replicas[serverId].UpdateAsync(updateRequest);
+
+                        }
+                        else
+                        {
+                            // TODO: Se o server ficar freezed isto fica bloqueado 
+                            Replicas[serverId].Update(updateRequest);
+                            attempts++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        continue;
+                    }
+                }
+            }
+            Partitions[partitionId].IncrementWriteId();
+            return new WriteReply { Ok = true };
+        }
+
         public LockReply Lock(string partitionId, string objectId)
         {
             lock (freezed) { }
@@ -163,6 +220,25 @@ namespace GstoreServer
             thread.Start();
 
             return new LockReply
+            {
+                Ack = true
+            };
+        }
+
+        public UpdateReply AdvancedUpdate(string partitionId, string objectId, string value, int writeId)
+        {
+            Console.WriteLine("Going to update: " + partitionId + " " + objectId + " " + value + " write:" + writeId);
+            lock (freezed) { }
+
+            DelayIncomingMessage();
+
+            if(writeId > Partitions[partitionId].CurrentWriteId)
+            {
+                Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
+                GstoreRepository.Write(partitionId, objectId, value);
+            }
+
+            return new UpdateReply
             {
                 Ack = true
             };

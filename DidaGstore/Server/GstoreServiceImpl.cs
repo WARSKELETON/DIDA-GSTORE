@@ -24,8 +24,7 @@ namespace GstoreServer
 
         public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
         {
-            WriteReply reply = GstoreServer.Write(request.PartitionId, request.ObjectId, request.Value);
-
+            WriteReply reply = GstoreServer.AdvancedWrite(request.PartitionId, request.ObjectId, request.Value);
             return Task.FromResult(reply);
         }
 
