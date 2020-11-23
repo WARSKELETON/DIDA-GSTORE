@@ -20,6 +20,7 @@ namespace GstoreServer
         private readonly int MaxDelay;
         private readonly IGstoreRepository GstoreRepository;
         private readonly Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient> Replicas;
+        private readonly HashSet<string> FailedServers;
         private readonly Dictionary<string, Partition> Partitions;
         private readonly Dictionary<string, string> AllServerIdsServerUrls;
         private readonly Object freezed = new Object();
@@ -35,6 +36,7 @@ namespace GstoreServer
             GstoreRepository = new GstoreRepository();
             Replicas = new Dictionary<string, GstoreReplicaService.GstoreReplicaServiceClient>();
             Partitions = new Dictionary<string, Partition>();
+            FailedServers = new HashSet<string>();
             AllServerIdsServerUrls = allServerIdsServerUrls;
             MaxFaults = (int)(Math.Ceiling(replicationFactor / 2.0) - 1.0);
 
@@ -45,7 +47,7 @@ namespace GstoreServer
                 Partitions.Add(partition.Id, partition);
             } // CONTAINS THE MASTER (MYSELF) AND THE SERVERS LIST
 
-            InitiatePingLoop();
+            AdvancedInitiatePingLoop();
         }
 
         public ReadReply Read(string partitionId, string objectId)
@@ -144,55 +146,58 @@ namespace GstoreServer
 
         public WriteReply AdvancedWrite(string partitionId, string objectId, string value)
         {
+            Console.WriteLine("Received advanced write: " + partitionId + ", " + objectId);
             lock (freezed) { }
+            Console.WriteLine("Going to advanced write: " + partitionId + ", " + objectId + ", " + value);
             DelayIncomingMessage();
+
             Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
             if (key == null)
             {
                 GstoreRepository.Write(partitionId, objectId, null);
                 key = GstoreRepository.GetKey(partitionId, objectId);
             }
-            
-            int attempts = 0;
+
+            int writeId;
+            lock (Partitions[partitionId])
+            {
+                writeId = Partitions[partitionId].IncrementWriteId();
+            }
             UpdateRequest updateRequest = new UpdateRequest
             {
                 PartitionId = partitionId,
                 ObjectId = objectId,
                 Value = value,
-                WriteId = Partitions[partitionId].CurrentWriteId
+                WriteId = writeId
             };
-            Partitions[partitionId].AddUpdate(Partitions[partitionId].CurrentWriteId, partitionId, objectId, value);
+            Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
             GstoreRepository.Write(partitionId, objectId, value);
-            lock (Partitions[partitionId])
-            {
-                foreach (string serverId in Partitions[partitionId].Servers)
-                {
-                    if (serverId == Id) continue;
-                    try
-                    {
-                        if (attempts >= MaxFaults)
-                        {
-                            // Se nao funcionar, criar thread
-                            Console.WriteLine("Updating server async: " + serverId);
-                            // the code that you want to measure comes here
-                            Replicas[serverId].UpdateAsync(updateRequest);
 
-                        }
-                        else
-                        {
-                            // TODO: Se o server ficar freezed isto fica bloqueado 
-                            Replicas[serverId].Update(updateRequest);
-                            attempts++;
-                        }
-                    }
-                    catch (Exception ex)
+            int attempts = 0;
+            foreach (string serverId in Partitions[partitionId].Servers)
+            {
+                if (serverId == Id || FailedServers.Contains(serverId)) continue;
+                try
+                {
+                    if (attempts >= MaxFaults)
                     {
-                        Console.WriteLine(ex.Message);
-                        continue;
+                        Console.WriteLine("Updating server async: " + serverId);
+                        Replicas[serverId].UpdateAsync(updateRequest);
+
+                    }
+                    else
+                    {
+                        // TODO: Se o server ficar freezed isto fica bloqueado 
+                        Replicas[serverId].Update(updateRequest);
+                        attempts++;
                     }
                 }
+                catch (Exception ex)
+                {
+                    addFailedServer(partitionId, serverId);
+                    continue;
+                }
             }
-            Partitions[partitionId].IncrementWriteId();
             return new WriteReply { Ok = true };
         }
 
@@ -233,11 +238,23 @@ namespace GstoreServer
 
             DelayIncomingMessage();
 
-            // Ver o log todos os que têm write id maior, se houver um com o mesmo object id então é chill não dá update
-            if(writeId > Partitions[partitionId].CurrentWriteId)
+            int writeIdInPartition;
+            lock (Partitions[partitionId])
+            {
+                writeIdInPartition = Partitions[partitionId].getWriteId();
+            }
+            if (writeId > writeIdInPartition)
             {
                 Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
                 GstoreRepository.Write(partitionId, objectId, value);
+            }
+            else
+            {
+                if (!Partitions[partitionId].checkHigherExistence(writeId, objectId))
+                {
+                    Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
+                    GstoreRepository.Write(partitionId, objectId, value);
+                }
             }
 
             return new UpdateReply
@@ -396,6 +413,53 @@ namespace GstoreServer
             };
             server.Start();
             while (true) ;
+        }
+
+        private void addFailedServer(string failedServerPartitionId, string failedServerId)
+        {
+            FailedServers.Add(failedServerId);
+            Partitions[failedServerPartitionId].FailedServer.Add(failedServerId);
+        }
+
+        private void AdvancedInitiatePingLoop()
+        {
+            Thread thread = new Thread(() =>
+            {
+                while (true)
+                {
+                    Thread.Sleep(PING_TIMEOUT);
+
+                    foreach (KeyValuePair<string, GstoreReplicaService.GstoreReplicaServiceClient> replica in Replicas)
+                    {
+                        try
+                        {
+                            // Console.WriteLine("Initiate Ping Request to: " + replica.Key);
+                            if (FailedServers.Contains(replica.Key)) continue;
+                            PingReplicaReply reply = replica.Value.PingReplica(new PingReplicaRequest());
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Detected Failure on server: " + replica.Key);
+
+                            foreach (Partition partition in Partitions.Values)
+                            {
+                                if (partition.Servers.Contains(replica.Key))
+                                {
+                                    if (replica.Key == partition.Master)
+                                    {
+                                        partition.Mre.Set();
+                                        partition.Mre.Reset();
+                                        partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
+                                        // TODO: initiate sync
+                                    }
+                                    addFailedServer(partition.Id, replica.Key);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            thread.Start();
         }
 
         private void InitiatePingLoop()

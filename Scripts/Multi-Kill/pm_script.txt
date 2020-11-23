@@ -10,7 +10,7 @@ Server s6 http://localhost:2006 100 300
 Client mary http://localhost:6001 client_script1
 Client alice http://localhost:6002 client_script2
 Client eve http://localhost:6003 client_script3
-Wait 6000
+Wait 1000
 Crash s1
 Crash s2
 Crash s3

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace GstoreServer.Models
@@ -11,16 +12,16 @@ namespace GstoreServer.Models
     // S3 
     class Partition
     {
-        public int CurrentWriteId { get; set; }
+        private int CurrentWriteId { get; set; }
 
-        // WriteId, PartitionId, ObjectId, Value
-        public List<Update> Updates { get; }
+        // (WriteId, ObjectId), Update(PartitionId, ObjectId, Value)
+        private readonly Dictionary<Tuple<int, string>, Update> Updates;
 
         public string Id { get; }
         public string Master { get; set; }
         public List<string> Servers { get; }
 
-        public List<string> FailedServer { get; }
+        public HashSet<string> FailedServer { get; }
 
         public ManualResetEvent Mre { get; }
 
@@ -30,16 +31,31 @@ namespace GstoreServer.Models
             this.CurrentWriteId = 0;
             this.Id = id;
             this.Master = master;
-            this.Updates = new List<Update>();
+            this.Updates = new Dictionary<Tuple<int, string>, Update>();
             this.Servers = new List<string>(servers);
-            this.FailedServer = new List<string>();
+            this.FailedServer = new HashSet<string>();
             this.Mre = new ManualResetEvent(false);
+        }
+
+        public bool checkHigherExistence(int writeId, string objectId)
+        {
+            for (int i = writeId; i <= CurrentWriteId; i++)
+            {
+                if (Updates.Keys.FirstOrDefault(key => key.Item1 == i && key.Item2 == objectId) != null)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void AddUpdate(int writeId, string partitionId, string objectId, string value)
         {
-            CurrentWriteId = writeId;
-            this.Updates.Add(new Update(writeId, partitionId, objectId, value));
+            if (writeId > CurrentWriteId)
+            {
+                CurrentWriteId = writeId;
+            }
+            Updates[new Tuple<int, string>(writeId, objectId)] = new Update(writeId, partitionId, objectId, value);
         }
 
         public override string ToString()
@@ -59,9 +75,15 @@ namespace GstoreServer.Models
             return $"Partition {Id} has {Servers.Count} active servers and {FailedServer.Count} failed servers\r\nMaster: {Master}\r\n{activeServers}\r\n{failedServers}\r\n";
         }
 
-        public void IncrementWriteId()
+        public int getWriteId()
         {
-            this.CurrentWriteId++;
+            return CurrentWriteId;
+        }
+
+        public int IncrementWriteId()
+        {
+            CurrentWriteId++;
+            return CurrentWriteId;
         }
     }
 }

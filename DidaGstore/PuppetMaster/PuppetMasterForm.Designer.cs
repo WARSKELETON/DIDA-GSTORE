@@ -144,7 +144,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(272, 338);
+            this.ClientSize = new System.Drawing.Size(272, 312);
             this.Controls.Add(this.labelUnfreeze);
             this.Controls.Add(this.labelFreeze);
             this.Controls.Add(this.labelKill);
@@ -173,7 +173,6 @@
         private System.Windows.Forms.TextBox txtKill;
         private System.Windows.Forms.Button btnStatus;
         private System.Windows.Forms.Button btnFreeze;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button btnUnfreeze;
         private System.Windows.Forms.TextBox txtFreeze;
         private System.Windows.Forms.TextBox txtUnfreeze;
