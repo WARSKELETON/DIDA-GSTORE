@@ -450,7 +450,11 @@ namespace GstoreServer
                                         partition.Mre.Set();
                                         partition.Mre.Reset();
                                         partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
-                                        // TODO: initiate sync
+                                        // I'm the new master, initiating sync
+                                        if (partition.Master == Id)
+                                        {
+                                            SyncPartition(partition.Id);
+                                        }
                                     }
                                     addFailedServer(partition.Id, replica.Key);
                                 }
@@ -460,6 +464,67 @@ namespace GstoreServer
                 }
             });
             thread.Start();
+        }
+
+        private void SyncPartition(string partitionId)
+        {
+            lock (Partitions[partitionId])
+            {
+                foreach (string serverId in Partitions[partitionId].Servers)
+                {
+                    if (serverId == Id || FailedServers.Contains(serverId)) continue;
+                    try
+                    {
+                        SyncLockReply reply = Replicas[serverId].SyncLock(new SyncLockRequest{ PartitionId = partitionId });
+                        for (int i = reply.WriteId + 1; i < Partitions[partitionId].getWriteId(); i++)
+                        {
+                            Update update = Partitions[partitionId].getUpdate(i);
+                            Replicas[serverId].Update(new UpdateRequest
+                            {
+                                PartitionId = partitionId,
+                                ObjectId = update.ObjectId,
+                                Value = update.Value,
+                                WriteId = update.WriteId
+                            });
+                        }
+                        Replicas[serverId].FinishedSync(new FinishedSyncRequest { PartitionId = partitionId });
+                    }
+                    catch (Exception ex)
+                    {
+                        addFailedServer(partitionId, serverId);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        public SyncLockReply SyncLock(string partitionId)
+        {
+            Thread thread = new Thread(() =>
+            {
+                lock (Partitions[partitionId])
+                {
+                    Partitions[partitionId].Mre.WaitOne();
+                }
+            });
+
+            thread.Start();
+
+            return new SyncLockReply
+            {
+                WriteId = Partitions[partitionId].getOldWriteId()
+            };
+        }
+
+        public FinishedSyncReply FinishedSync(string partitionId)
+        {
+            Partitions[partitionId].Mre.Set();
+            Partitions[partitionId].Mre.Reset();
+
+            return new FinishedSyncReply
+            {
+                Ok = true
+            };
         }
 
         private void InitiatePingLoop()

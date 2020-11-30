@@ -1,5 +1,6 @@
 begin-repeat 10
 write p1 obj-$i "value----$i"
+read p1 obj-$i s1
 end-repeat
 wait 1000
 begin-repeat 5

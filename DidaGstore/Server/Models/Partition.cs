@@ -14,6 +14,8 @@ namespace GstoreServer.Models
     {
         private int CurrentWriteId { get; set; }
 
+        private int OldWriteId { get; set; }
+
         // (WriteId, ObjectId), Update(PartitionId, ObjectId, Value)
         private readonly Dictionary<Tuple<int, string>, Update> Updates;
 
@@ -29,6 +31,7 @@ namespace GstoreServer.Models
         public Partition(string id, string master, List<string> servers)
         {
             this.CurrentWriteId = 0;
+            this.OldWriteId = 0;
             this.Id = id;
             this.Master = master;
             this.Updates = new Dictionary<Tuple<int, string>, Update>();
@@ -55,7 +58,28 @@ namespace GstoreServer.Models
             {
                 CurrentWriteId = writeId;
             }
+
+            if (writeId - OldWriteId == 1)
+            {
+                OldWriteId = writeId;
+                if (writeId < CurrentWriteId)
+                {
+                    checkFurtherUpdates(writeId);
+                }
+            }
             Updates[new Tuple<int, string>(writeId, objectId)] = new Update(writeId, partitionId, objectId, value);
+        }
+
+        private void checkFurtherUpdates(int writeId)
+        {
+            for (int i = writeId; i <= CurrentWriteId; i++)
+            {
+                if (Updates.Keys.FirstOrDefault(key => key.Item1 == i) == null)
+                {
+                    break;
+                }
+                OldWriteId++;
+            }
         }
 
         public override string ToString()
@@ -75,6 +99,16 @@ namespace GstoreServer.Models
             return $"Partition {Id} has {Servers.Count} active servers and {FailedServer.Count} failed servers\r\nMaster: {Master}\r\n{activeServers}\r\n{failedServers}\r\n";
         }
 
+        public Update getUpdate(int writeId)
+        {
+            return Updates[Updates.Keys.FirstOrDefault(key => key.Item1 == writeId)];
+        }
+
+        public int getOldWriteId()
+        {
+            return CurrentWriteId;
+        }
+
         public int getWriteId()
         {
             return CurrentWriteId;
@@ -83,6 +117,7 @@ namespace GstoreServer.Models
         public int IncrementWriteId()
         {
             CurrentWriteId++;
+            OldWriteId++;
             return CurrentWriteId;
         }
     }

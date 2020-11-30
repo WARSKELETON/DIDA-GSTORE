@@ -12,5 +12,3 @@ Client alice http://localhost:6002 client_script2
 Client eve http://localhost:6003 client_script3
 Wait 1000
 Crash s1
-Crash s2
-Crash s3

@@ -4,6 +4,9 @@ service GstoreReplicaService {
 	rpc Lock (LockRequest) returns (LockReply);
 	rpc Update (UpdateRequest) returns (UpdateReply);
 
+	rpc SyncLock (SyncLockRequest) returns (SyncLockReply);
+	rpc FinishedSync (FinishedSyncRequest) returns (FinishedSyncReply);
+
 	rpc PingReplica (PingReplicaRequest) returns (PingReplicaReply);
 }
 
@@ -25,6 +28,22 @@ message UpdateRequest {
 
 message UpdateReply {
 	bool ack = 1;
+}
+
+message SyncLockRequest {
+	string partition_id = 1;
+}
+
+message SyncLockReply {
+	int32 write_id = 1;
+}
+
+message FinishedSyncRequest {
+	string partition_id = 1;
+}
+
+message FinishedSyncReply {
+	bool ok = 1;
 }
 
 message PingReplicaRequest {
