@@ -23,7 +23,7 @@ namespace GstoreServer.Models
         public string Master { get; set; }
         public List<string> Servers { get; }
 
-        public HashSet<string> FailedServer { get; }
+        public HashSet<string> FailedServers { get; }
 
         public ManualResetEvent Mre { get; }
 
@@ -36,7 +36,7 @@ namespace GstoreServer.Models
             this.Master = master;
             this.Updates = new Dictionary<Tuple<int, string>, Update>();
             this.Servers = new List<string>(servers);
-            this.FailedServer = new HashSet<string>();
+            this.FailedServers = new HashSet<string>();
             this.Mre = new ManualResetEvent(false);
         }
 
@@ -88,15 +88,16 @@ namespace GstoreServer.Models
             string failedServers = "Failed Servers:";
             foreach (string server in Servers)
             {
+                if (FailedServers.Contains(server)) continue;
                 activeServers += " " + server;
             }
 
-            foreach (string failedServer in FailedServer)
+            foreach (string failedServer in FailedServers)
             {
                 failedServers += " " + failedServer;
             }
 
-            return $"Partition {Id} has {Servers.Count} active servers and {FailedServer.Count} failed servers\r\nMaster: {Master}\r\n{activeServers}\r\n{failedServers}\r\n";
+            return $"Partition {Id} has {Servers.Count} active servers and {FailedServers.Count} failed servers\r\nMaster: {Master}\r\n{activeServers}\r\n{failedServers}\r\n";
         }
 
         public Update getUpdate(int writeId)

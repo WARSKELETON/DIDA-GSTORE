@@ -46,11 +46,14 @@ namespace GstoreClient
 
                 if (!ServerExists(partitionId, attachedServer) && serverId == "-1")
                 {
-                    AttachToRandomServer(partitionId);
+                    if (Partitions[partitionId].LastAttached != null && ServerExists(partitionId, Partitions[partitionId].LastAttached))
+                        AttachToServer(Partitions[partitionId].LastAttached, partitionId);
+                    else
+                        AttachToRandomServer(partitionId);
                 }
                 else if (serverId != "-1" && attachedServer == "-1")
                 {
-                    AttachToServer(serverId);
+                    AttachToServer(serverId, partitionId);
                 }
 
                 reply = Servers[attachedServer].Read(new ReadRequest() {
@@ -66,7 +69,7 @@ namespace GstoreClient
 
             if (reply.Value.Equals("N/A") && !serverId.Equals("-1"))
             {
-                AttachToServer(serverId);
+                AttachToServer(serverId, partitionId);
                 return Read(partitionId, objectId, "-1");
             }
 
@@ -76,7 +79,7 @@ namespace GstoreClient
         public bool Write(string partitionId, string objectId, string value)
         {
             string masterId = GetMasterId(partitionId);
-            AttachToServer(masterId);
+            AttachToServer(masterId, partitionId);
             try { 
                 WriteReply reply = Servers[masterId].Write(new WriteRequest()
                 {
@@ -148,11 +151,13 @@ namespace GstoreClient
             int index = (new Random()).Next(0, availableServers.Count);
 
             attachedServer = availableServers[index];
+            Partitions[partitionId].LastAttached = attachedServer;
         }
 
-        private void AttachToServer(string serverId)
+        private void AttachToServer(string serverId, string partitionId)
         {
             attachedServer = serverId;
+            Partitions[partitionId].LastAttached = attachedServer;   
         }
 
         private string GetMasterId(string partitionId)

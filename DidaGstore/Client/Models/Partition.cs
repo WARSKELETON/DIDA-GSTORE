@@ -13,8 +13,9 @@ namespace GstoreClient.Models
     {
         public string Id { get; }
         public string Master { get; set; }
-        public List<string> Servers { get; }
 
+        public string LastAttached { get; set; }
+        public List<string> Servers { get; }
         public List<string> FailedServer { get; }
 
         public Partition(string id, string master, List<string> servers) {

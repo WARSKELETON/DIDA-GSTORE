@@ -1,22 +1,12 @@
 ﻿syntax = "proto3";
 
 service GstoreReplicaService {
-	rpc Lock (LockRequest) returns (LockReply);
 	rpc Update (UpdateRequest) returns (UpdateReply);
 
 	rpc SyncLock (SyncLockRequest) returns (SyncLockReply);
 	rpc FinishedSync (FinishedSyncRequest) returns (FinishedSyncReply);
 
 	rpc PingReplica (PingReplicaRequest) returns (PingReplicaReply);
-}
-
-message LockRequest {
-	string partition_id = 1;
-	string object_id = 2;
-}
-
-message LockReply {
-	bool ack = 1;
 }
 
 message UpdateRequest {
