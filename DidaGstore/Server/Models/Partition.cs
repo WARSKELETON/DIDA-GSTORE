@@ -72,7 +72,7 @@ namespace GstoreServer.Models
 
         private void checkFurtherUpdates(int writeId)
         {
-            for (int i = writeId; i <= CurrentWriteId; i++)
+            for (int i = writeId + 1; i <= CurrentWriteId; i++)
             {
                 if (Updates.Keys.FirstOrDefault(key => key.Item1 == i) == null)
                 {
@@ -102,12 +102,13 @@ namespace GstoreServer.Models
 
         public Update getUpdate(int writeId)
         {
-            return Updates[Updates.Keys.FirstOrDefault(key => key.Item1 == writeId)];
+            Tuple<int, string> key = Updates.Keys.FirstOrDefault(key => key.Item1 == writeId);
+            return key == null ? null : Updates[key];
         }
 
         public int getOldWriteId()
         {
-            return CurrentWriteId;
+            return OldWriteId;
         }
 
         public int getWriteId()
