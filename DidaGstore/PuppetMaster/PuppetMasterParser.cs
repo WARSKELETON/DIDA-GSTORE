@@ -80,7 +80,7 @@ namespace PuppetMaster
         public void GenerateSystemConfig(string fileString)
         {
             Regex serverRegex = new Regex(@"Server\s(?<server_id>[^\s]+)\s(?<server_url>\w+:\/\/[^\/]+?:\d+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
-            Regex partitionRegex = new Regex(@"Partition\s(?<r_factor>\d)\s(?<partition_name>[^\s]+)(?<servers_ids>(\s[^\s]+)+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
+            Regex partitionRegex = new Regex(@"Partition\s(?<r_factor>[\d]+)\s(?<partition_name>[^\s]+)(?<servers_ids>(\s[^\s]+)+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
             Regex replicationFactorRegex = new Regex(@"ReplicationFactor\s(?<replication_factor>[\d]+)", RegexOptions.None, TimeSpan.FromMilliseconds(150));
             MatchCollection serverMatches = serverRegex.Matches(fileString);
             MatchCollection partitionMatches = partitionRegex.Matches(fileString);

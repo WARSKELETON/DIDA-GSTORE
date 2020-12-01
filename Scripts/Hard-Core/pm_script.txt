@@ -1,0 +1,30 @@
+ReplicationFactor 10
+Partition 10 p1 s1 s2 s3 s4 s5 s6 s7 s8 s9 s10
+Partition 10 p2 s1 s2 s3 s4 s5 s11 s12 s13 s14 s15
+Partition 10 p3 s6 s7 s8 s9 s10 s16 s17 s18 s19 s20
+Server s1 http://localhost:2001 0 100
+Server s2 http://localhost:2002 0 100
+Server s3 http://localhost:2003 0 100
+Server s4 http://localhost:2004 0 100
+Server s5 http://localhost:2005 0 100
+Server s6 http://localhost:2006 0 100
+Server s7 http://localhost:2007 0 100
+Server s8 http://localhost:2008 0 100
+Server s9 http://localhost:2009 0 100
+Server s10 http://localhost:2010 0 100
+Server s11 http://localhost:2011 0 100
+Server s12 http://localhost:2012 0 100
+Server s13 http://localhost:2013 0 100
+Server s14 http://localhost:2014 0 100
+Server s15 http://localhost:2015 0 100
+Server s16 http://localhost:2016 0 100
+Server s17 http://localhost:2017 0 100
+Server s18 http://localhost:2018 0 100
+Server s19 http://localhost:2019 0 100
+Server s20 http://localhost:2020 0 100
+Client mary http://localhost:6001 client_script1
+Client alice http://localhost:6002 client_script2
+Client eve http://localhost:6003 client_script3
+Client bob http://localhost:6004 client_script4
+Wait 20000
+Crash s1

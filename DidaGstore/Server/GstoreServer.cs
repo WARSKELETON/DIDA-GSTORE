@@ -393,12 +393,6 @@ namespace GstoreServer
                 }
             }
 
-            Console.WriteLine("AGORA CARALHO!");
-            Console.WriteLine("AGORA CARALHO!");
-            Console.WriteLine("AGORA CARALHO!");
-            Console.WriteLine("AGORA CARALHO!");
-            Console.WriteLine("AGORA CARALHO!");
-
             foreach (string serverId in Partitions[partitionId].Servers)
             {
                 if (FailedServers.Contains(serverId)) continue;
