@@ -39,8 +39,6 @@ namespace GstoreServer
             AllServerIdsServerUrls = allServerIdsServerUrls;
             MaxFaults = (int)(Math.Ceiling(replicationFactor / 2.0) - 1.0);
 
-            PrintStatus();
-
             foreach (Partition partition in partitions)
             {
                 Partitions.Add(partition.Id, partition);
@@ -88,18 +86,15 @@ namespace GstoreServer
             Console.WriteLine("Going to advanced write: " + partitionId + ", " + objectId + ", " + value);
             DelayIncomingMessage();
 
-            Tuple<string, string> key = GstoreRepository.GetKey(partitionId, objectId);
-            if (key == null)
-            {
-                GstoreRepository.Write(partitionId, objectId, null);
-                key = GstoreRepository.GetKey(partitionId, objectId);
-            }
-
             int writeId;
             lock (Partitions[partitionId])
             {
                 writeId = Partitions[partitionId].IncrementWriteId();
+                Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
+                GstoreRepository.Write(partitionId, objectId, value);
             }
+            Console.WriteLine("Finished write: " + partitionId + ", " + objectId + ", " + value + ", " + writeId);
+
             UpdateRequest updateRequest = new UpdateRequest
             {
                 PartitionId = partitionId,
@@ -108,31 +103,20 @@ namespace GstoreServer
                 WriteId = writeId,
                 InSync = false
             };
-            Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
-            GstoreRepository.Write(partitionId, objectId, value);
-            Console.WriteLine("Finished write: " + partitionId + ", " + objectId + ", " + value);
 
-            int attempts = 0;
+            int quorum = 0;
+            object quorumObj = new Object();
             foreach (string serverId in Partitions[partitionId].Servers)
             {
                 if (serverId == Id || FailedServers.Contains(serverId) || Partitions[partitionId].Servers.IndexOf(serverId) < Partitions[partitionId].Servers.IndexOf(Id)) continue;
                 try
                 {
-                    if (attempts >= MaxFaults)
-                    {
-                        Console.WriteLine("Updating server async: " + serverId);
-                        if (writeId <= 5 || writeId >= 10)
+                    Replicas[serverId].UpdateAsync(updateRequest).GetAwaiter().OnCompleted(() => { 
+                        lock (quorumObj)
                         {
-                            Replicas[serverId].UpdateAsync(updateRequest);
+                            quorum++;
                         }
-
-                    }
-                    else
-                    {
-                        // TODO: Se o server ficar freezed isto fica bloqueado 
-                        Replicas[serverId].Update(updateRequest);
-                        attempts++;
-                    }
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -140,6 +124,8 @@ namespace GstoreServer
                     continue;
                 }
             }
+            while (quorum < MaxFaults) ;
+            Console.WriteLine(quorum);
             return new WriteReply { Ok = true };
         }
 
@@ -158,12 +144,24 @@ namespace GstoreServer
                 lock (Partitions[partitionId])
                 {
                     writeIdInPartition = Partitions[partitionId].getWriteId();
+                    WriteUpdate(partitionId, objectId, value, writeId, writeIdInPartition);
                 }
             }
             else
             {
                 writeIdInPartition = Partitions[partitionId].getWriteId();
+                WriteUpdate(partitionId, objectId, value, writeId, writeIdInPartition);
             }
+
+            Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
+            return new UpdateReply
+            {
+                Ack = true
+            };
+        }
+
+        private void WriteUpdate(string partitionId, string objectId, string value, int writeId, int writeIdInPartition)
+        {
 
             if (writeId > writeIdInPartition)
             {
@@ -176,12 +174,6 @@ namespace GstoreServer
                     GstoreRepository.Write(partitionId, objectId, value);
                 }
             }
-
-            Partitions[partitionId].AddUpdate(writeId, partitionId, objectId, value);
-            return new UpdateReply
-            {
-                Ack = true
-            };
         }
 
         public PingReply Ping()
@@ -198,7 +190,6 @@ namespace GstoreServer
         {
             // Console.WriteLine("Received Ping.");
             lock (freezed) { }
-            DelayIncomingMessage();
 
             return new PingReplicaReply
             {
@@ -355,15 +346,15 @@ namespace GstoreServer
                             {
                                 if (partition.Servers.Contains(replica.Key))
                                 {
-                                    lock (Partitions[partition.Id])
+                                    if (replica.Key == partition.Master)
                                     {
-                                        if (replica.Key == partition.Master)
+                                        partition.Mre.Set();
+                                        partition.Mre.Reset();
+                                        partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
+                                        // I'm the new master, initiating sync
+                                        if (partition.Master == Id)
                                         {
-                                            partition.Mre.Set();
-                                            partition.Mre.Reset();
-                                            partition.Master = partition.Servers[(partition.Servers.IndexOf(partition.Master) + 1) % partition.Servers.Count];
-                                            // I'm the new master, initiating sync
-                                            if (partition.Master == Id)
+                                            lock (Partitions[partition.Id])
                                             {
                                                 SyncPartition(partition.Id);
                                             }
@@ -383,27 +374,74 @@ namespace GstoreServer
         {
             lock (freezed) { }
 
+            Dictionary<string, int> serverIdsOldWriteIds = new Dictionary<string, int>();
+
+            serverIdsOldWriteIds.Add(Id, Partitions[partitionId].getOldWriteId());
             foreach (string serverId in Partitions[partitionId].Servers)
             {
                 if (serverId == Id || FailedServers.Contains(serverId)) continue;
                 try
                 {
-                    SyncLockReply reply = Replicas[serverId].SyncLock(new SyncLockRequest{ PartitionId = partitionId });
-                    Console.WriteLine("Received sync reply in partition " + partitionId + " by server " + serverId + " with write id " + reply.WriteId);
-                    for (int i = reply.WriteId + 1; i < Partitions[partitionId].getWriteId(); i++)
+                    Console.WriteLine("Sync Locking: " + serverId);
+                    SyncLockReply reply = Replicas[serverId].SyncLock(new SyncLockRequest { PartitionId = partitionId });
+                    serverIdsOldWriteIds.Add(serverId, reply.WriteId);
+                }
+                catch (Exception ex)
+                {
+                    addFailedServer(partitionId, serverId);
+                    continue;
+                }
+            }
+
+            Console.WriteLine("AGORA CARALHO!");
+            Console.WriteLine("AGORA CARALHO!");
+            Console.WriteLine("AGORA CARALHO!");
+            Console.WriteLine("AGORA CARALHO!");
+            Console.WriteLine("AGORA CARALHO!");
+
+            foreach (string serverId in Partitions[partitionId].Servers)
+            {
+                if (FailedServers.Contains(serverId)) continue;
+                try
+                {
+                    foreach (string serverIdToSync in Partitions[partitionId].Servers)
                     {
-                        Update update = Partitions[partitionId].getUpdate(i);
-                        Replicas[serverId].Update(new UpdateRequest
+                        if (serverIdToSync == serverId || FailedServers.Contains(serverIdToSync)) continue;
+                        if (serverIdsOldWriteIds[serverId] < serverIdsOldWriteIds[serverIdToSync])
                         {
-                            PartitionId = partitionId,
-                            ObjectId = update == null ? "" : update.ObjectId,
-                            Value = update == null ? "" :update.Value,
-                            WriteId = i,
-                            InSync = true
-                        });
+                            Console.WriteLine($"{serverId} with {serverIdsOldWriteIds[serverId]} initiating sync with {serverIdToSync} with {serverIdsOldWriteIds[serverIdToSync]}");
+                            InitiateSyncReply reply;
+                            if (serverIdToSync == Id)
+                            {
+                                reply = InitiateSync(partitionId, serverId, serverIdsOldWriteIds[serverId]);
+                            }
+                            else
+                            {
+                                reply = Replicas[serverIdToSync].InitiateSync(new InitiateSyncRequest { 
+                                    PartitionId = partitionId,
+                                    ServerId = serverId,
+                                    WriteId = serverIdsOldWriteIds[serverId]
+                                });
+                            }
+                            serverIdsOldWriteIds[serverId] = reply.NewWriteId;
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    addFailedServer(partitionId, serverId);
+                    continue;
+                }
+            }
+
+            foreach (string serverId in Partitions[partitionId].Servers)
+            {
+                if (serverId == Id || FailedServers.Contains(serverId)) continue;
+                try
+                {
+                    Console.WriteLine("Sync Finishing: " + serverId);
                     Replicas[serverId].FinishedSync(new FinishedSyncRequest { PartitionId = partitionId });
-                    Console.WriteLine("Finished sync in partition " + partitionId + " by server " + serverId);
                 }
                 catch (Exception ex)
                 {
@@ -413,13 +451,56 @@ namespace GstoreServer
             }
         }
 
+        public InitiateSyncReply InitiateSync(string partitionId, string serverId, int writeId)
+        {
+            lock (freezed) { }
+
+            Console.WriteLine("Received Sync Request by: " + serverId);
+
+            if (FailedServers.Contains(serverId)) {
+                return new InitiateSyncReply
+                {
+                    Ok = false,
+                    NewWriteId = writeId
+                };
+            }
+
+            Console.WriteLine("Received Sync Request by: " + serverId);
+
+            try
+            {
+                for (int i = writeId + 1; i < Partitions[partitionId].getWriteId(); i++)
+                {
+                    Update update = Partitions[partitionId].getUpdate(i);
+                    Replicas[serverId].Update(new UpdateRequest
+                    {
+                        PartitionId = partitionId,
+                        ObjectId = update == null ? "" : update.ObjectId,
+                        Value = update == null ? "" : update.Value,
+                        WriteId = i,
+                        InSync = true
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                addFailedServer(partitionId, serverId);
+            }
+
+            return new InitiateSyncReply
+            {
+                Ok = true,
+                NewWriteId = Partitions[partitionId].getWriteId()
+            };
+        }
+
         public SyncLockReply SyncLock(string partitionId)
         {
             lock (freezed) { }
 
             DelayIncomingMessage();
 
-            Console.WriteLine("Initiating sync in partition " + partitionId);
+            Console.WriteLine("Sync locked in partition " + partitionId);
 
             Thread thread = new Thread(() =>
             {

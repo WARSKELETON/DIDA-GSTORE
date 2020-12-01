@@ -29,6 +29,13 @@ namespace GstoreServer
             return Task.FromResult(reply);
         }
 
+        public override Task<InitiateSyncReply> InitiateSync(InitiateSyncRequest request, ServerCallContext context)
+        {
+            InitiateSyncReply reply = GstoreServer.InitiateSync(request.PartitionId, request.ServerId, request.WriteId);
+
+            return Task.FromResult(reply);
+        }
+
         public override Task<FinishedSyncReply> FinishedSync(FinishedSyncRequest request, ServerCallContext context)
         {
             FinishedSyncReply reply = GstoreServer.FinishedSync(request.PartitionId);
